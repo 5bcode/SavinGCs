@@ -1,0 +1,31 @@
+[00:00:01.738] Server  LOG     ✓ Ready in 1176ms
+[00:00:03.475] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:03.895] Server  LOG     Database initialized successfully
+[00:01:41.753] Server  LOG     ✓ Compiled in 51ms
+[00:01:42.788] Browser ERROR   ./Desktop/SavinGCs/components/AllocateFunds.tsx:30:15
+Parsing ecmascript source code failed
+  28 |     const [showModal, setShowModal] = useState(false);
+  29 |     const [formData, setFormData] = useState({
+> 30 |         const [sourcePotId, setSourcePotId] = useState<string>('');
+     |               ^
+  31 |         const [sourceAccountId, setSourceAccountId] = useState<string>('');
+  32 |         const [targetPotId, setTargetPotId] = useState<string>('');
+  33 |         const [amount, setAmount] = useState<string>('');
+
+Unexpected token `[`. Expected ... , *,  (, [, :, , ?, =, an identifier, public, protected, private, readonly, <.
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/SavinGCs/components/AllocateFunds.tsx [Client Component Browser]
+    ./Desktop/SavinGCs/components/Dashboard.tsx [Client Component Browser]
+    ./Desktop/SavinGCs/app/page.tsx [Client Component Browser]
+    ./Desktop/SavinGCs/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/SavinGCs/components/AllocateFunds.tsx [Client Component SSR]
+    ./Desktop/SavinGCs/components/Dashboard.tsx [Client Component SSR]
+    ./Desktop/SavinGCs/app/page.tsx [Client Component SSR]
+    ./Desktop/SavinGCs/app/page.tsx [Server Component]
+[00:03:32.780] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:03:33.207] Server  LOG     Database initialized successfully
+[00:03:33.315] Server  LOG     Database initialized successfully

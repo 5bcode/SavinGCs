@@ -1,0 +1,15 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/accounts/[id]/route": "/api/accounts/[id]",
+  "/api/accounts/route": "/api/accounts",
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/auth/session/route": "/api/auth/session",
+  "/api/export/csv/route": "/api/export/csv",
+  "/api/pots/[id]/route": "/api/pots/[id]",
+  "/api/pots/route": "/api/pots",
+  "/api/transactions/[id]/route": "/api/transactions/[id]",
+  "/api/transactions/route": "/api/transactions",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}

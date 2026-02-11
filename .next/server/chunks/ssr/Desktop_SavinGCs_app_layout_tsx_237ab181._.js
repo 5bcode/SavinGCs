@@ -1,0 +1,3 @@
+module.exports=[35392,a=>{"use strict";var b=a.i(74888);function c({children:a}){return(0,b.jsx)("html",{lang:"en",children:(0,b.jsx)("body",{children:a})})}a.s(["default",()=>c,"metadata",0,{title:"SavinGCs — Savings Tracker",description:"Track your savings together. Built for couples saving for their first home."},"viewport",0,{width:"device-width",initialScale:1,maximumScale:1,themeColor:"#070B1E"}])}];
+
+//# sourceMappingURL=Desktop_SavinGCs_app_layout_tsx_237ab181._.js.map
