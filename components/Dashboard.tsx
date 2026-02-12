@@ -41,6 +41,16 @@ interface DashboardProps {
 export default function Dashboard({ onUpdateBalance, onAccountClick }: DashboardProps) {
     const { pots, accounts, isLoading, refresh } = useSavingsData();
 
+    // Sort pots by time left (goal date) for consistent ordering everywhere
+    const sortedPots = [...pots].sort((a: any, b: any) => {
+        if (a.goal_date && b.goal_date) {
+            return new Date(a.goal_date).getTime() - new Date(b.goal_date).getTime();
+        }
+        if (a.goal_date) return -1;
+        if (b.goal_date) return 1;
+        return 0;
+    });
+
     // Calculate totals directly from data
     const totalSavings = pots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
 
@@ -52,8 +62,8 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
     // Net worth uses totalSavings. Progress uses filtered values.
     const overallProgress = totalGoal > 0 ? (savingsForProgress / totalGoal) * 100 : 0;
 
-    // Filter out Unallocated pot if balance is 0
-    const visiblePots = pots.filter((p: any) => p.name !== 'Unallocated' || p.total_balance !== 0);
+    // Filter out Unallocated pot if balance is 0, using the sorted list
+    const visiblePots = sortedPots.filter((p: any) => p.name !== 'Unallocated' || p.total_balance !== 0);
 
     if (isLoading) {
         return (
@@ -126,7 +136,7 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
                 </button>
                 <div style={{ flex: 1 }}>
                     <AllocateFunds
-                        pots={pots}
+                        pots={sortedPots}
                         accounts={accounts}
                         onUpdate={refresh}
                     />

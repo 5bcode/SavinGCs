@@ -41,7 +41,7 @@ export default function Login({ onLogin }: LoginProps) {
                 <div className="login-brand">
                     <div className="login-logo">🏡</div>
                     <h1 className="login-title">SavinGCs</h1>
-                    <p className="login-subtitle">Easily manage and track our savings and financial goals, together.</p>
+                    <p className="login-subtitle">to manage our financial goals and savings, together.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="card-glass">
