@@ -18,6 +18,7 @@ interface SavingsPot {
     id: number;
     name: string;
     goal_amount: number | null;
+    goal_date: string | null;
     color: string;
     icon: string;
     total_balance: number;
@@ -178,6 +179,21 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
     const clampedProgress = Math.min(progress, 100);
     const isGoalMet = pot.goal_amount && pot.total_balance >= pot.goal_amount;
 
+    // Calculate monthly savings target
+    let monthlySavingsTarget: number | null = null;
+    let monthsRemaining: number | null = null;
+    if (pot.goal_amount && pot.goal_date && !isGoalMet) {
+        const now = new Date();
+        const goalDate = new Date(pot.goal_date);
+        const diffMs = goalDate.getTime() - now.getTime();
+        const diffMonths = diffMs / (1000 * 60 * 60 * 24 * 30.44); // average month
+        monthsRemaining = Math.max(Math.ceil(diffMonths), 0);
+        const remaining = pot.goal_amount - pot.total_balance;
+        if (monthsRemaining > 0 && remaining > 0) {
+            monthlySavingsTarget = remaining / monthsRemaining;
+        }
+    }
+
     return (
         <div className="card" style={{ padding: 'var(--sp-lg)' }}>
             <div className="flex items-center justify-between mb-md">
@@ -190,6 +206,11 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
                         {pot.goal_amount && (
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
                                 Goal: £{pot.goal_amount.toLocaleString('en-GB')}
+                                {pot.goal_date && (
+                                    <span style={{ marginLeft: '6px', opacity: 0.7 }}>
+                                        by {new Date(pot.goal_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                                    </span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -203,6 +224,49 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
                     )}
                 </div>
             </div>
+
+            {/* Monthly savings target pill */}
+            {monthlySavingsTarget !== null && monthsRemaining !== null && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--r-md)',
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid rgba(245, 158, 11, 0.2)',
+                    marginBottom: 'var(--sp-md)',
+                    fontSize: '0.78rem',
+                }}>
+                    <span style={{ fontSize: '1rem' }}>📅</span>
+                    <div style={{ flex: 1 }}>
+                        <span style={{ fontWeight: 700, color: '#f59e0b', fontFamily: 'var(--font-mono)' }}>
+                            £{monthlySavingsTarget.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo
+                        </span>
+                        <span style={{ color: 'var(--text-tertiary)', marginLeft: '6px' }}>
+                            needed · {monthsRemaining} month{monthsRemaining !== 1 ? 's' : ''} left
+                        </span>
+                    </div>
+                </div>
+            )}
+            {pot.goal_amount && pot.goal_date && isGoalMet && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    borderRadius: 'var(--r-md)',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    marginBottom: 'var(--sp-md)',
+                    fontSize: '0.78rem',
+                    color: 'var(--success)',
+                    fontWeight: 600,
+                }}>
+                    <span style={{ fontSize: '1rem' }}>🎉</span>
+                    Goal reached ahead of schedule!
+                </div>
+            )}
 
             {pot.goal_amount && (
                 <div>
