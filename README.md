@@ -64,6 +64,7 @@ Create a `.env.local` file in the project root:
 |----------|-------------|----------|
 | `TURSO_DATABASE_URL` | Turso database URL | Yes (production) |
 | `TURSO_AUTH_TOKEN` | Turso auth token | Yes (production) |
+| `DEFAULT_PASSWORD` | Default password for initial users | Yes (for first-time setup) |
 | `NODE_ENV` | Environment (`development` / `production`) | No |
 
 > [!NOTE]
@@ -77,11 +78,14 @@ Create a `.env.local` file in the project root:
 
 | User | Username | Password | Display Name |
 |------|----------|----------|--------------|
-| 1 | `gary` | `changeme` | Gary |
-| 2 | `catherine` | `changeme` | Catherine |
+| 1 | `gary` | *Value of `DEFAULT_PASSWORD`* | Gary |
+| 2 | `catherine` | *Value of `DEFAULT_PASSWORD`* | Catherine |
+
+> [!NOTE]
+> `DEFAULT_PASSWORD` must be set in your environment variables for initial user creation.
 
 > [!CAUTION]
-> Change these passwords immediately in any production deployment!
+> Change these passwords immediately after initial setup in any production deployment!
 
 ### Getting Started
 
