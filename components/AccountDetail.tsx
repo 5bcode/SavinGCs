@@ -91,7 +91,6 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                     accountName: account.account_name,
                     accountType,
                     owner,
-                    currentBalance: newBalance,
                 })
             });
 

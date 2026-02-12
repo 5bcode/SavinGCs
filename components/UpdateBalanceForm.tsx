@@ -58,7 +58,6 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                 body: JSON.stringify({
                     accountName: account.account_name,
                     accountType: account.account_type,
-                    currentBalance: newBalance,
                 })
             });
             if (!res.ok) throw new Error('Failed to update');

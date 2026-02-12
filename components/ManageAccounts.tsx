@@ -54,8 +54,26 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
     }, [pots, formData.potId]);
 
 
+    const [submitting, setSubmitting] = useState(false);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Basic duplicate check
+        const isDuplicate = accounts.some(acc =>
+            acc.account_name.toLowerCase() === formData.accountName.toLowerCase() &&
+            acc.owner === formData.owner &&
+            acc.pot_id === parseInt(formData.potId) &&
+            (acc.provider || '').toLowerCase() === (formData.provider || '').toLowerCase()
+        );
+
+        if (isDuplicate) {
+            if (!confirm(`An account named "${formData.accountName}" for ${formData.owner} already exists in this pot. Are you sure you want to add another one?`)) {
+                return;
+            }
+        }
+
+        setSubmitting(true);
         try {
             const res = await fetch('/api/accounts', {
                 method: 'POST',
@@ -72,7 +90,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
             });
             if (!res.ok) throw new Error('Failed to create account');
             setFormData({
-                potId: '',
+                potId: formData.potId, // Keep pot selected
                 provider: '',
                 accountName: '',
                 accountType: 'savings',
@@ -83,7 +101,12 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
             setShowForm(false);
             refresh();
             onUpdate();
-        } catch (error) { console.error('Error creating account:', error); alert('Failed to create account'); }
+        } catch (error) {
+            console.error('Error creating account:', error);
+            alert('Failed to create account');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleDelete = async (id: number) => {
@@ -106,9 +129,9 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
         savings: 'Savings', isa: 'ISA', current: 'Current', investment: 'Investment', other: 'Other'
     };
 
-    // Group by pot
+    // Group by pot - Show ALL accounts (even zero balance) so user can manage them
     const grouped: Record<string, { color: string; accounts: Account[] }> = {};
-    accounts.filter(acc => acc.current_balance !== 0).forEach((acc) => {
+    accounts.forEach((acc) => {
         if (!grouped[acc.pot_name]) grouped[acc.pot_name] = { color: acc.pot_color, accounts: [] };
         grouped[acc.pot_name].accounts.push(acc);
     });
@@ -213,7 +236,9 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                             onChange={(e) => setFormData({ ...formData, startingBalanceDate: e.target.value })}
                             required />
                     </div>
-                    <button type="submit" className="btn btn-teal" style={{ width: '100%' }}>Add Account</button>
+                    <button type="submit" className="btn btn-teal" style={{ width: '100%' }} disabled={submitting}>
+                        {submitting ? 'Adding...' : 'Add Account'}
+                    </button>
                 </form>
             )}
 
