@@ -1,8 +1,0 @@
-{
-  "/api/pots/[id]/route": "app/api/pots/[id]/route.js",
-  "/page": "app/page.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/api/auth/session/route": "app/api/auth/session/route.js",
-  "/api/pots/route": "app/api/pots/route.js",
-  "/api/accounts/route": "app/api/accounts/route.js"
-}
