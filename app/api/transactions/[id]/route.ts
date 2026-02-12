@@ -13,29 +13,20 @@ export async function DELETE(
     await ensureInitialized();
 
     try {
+        // Verify transaction exists before deleting
         const txRes = await dbClient.execute({
-            sql: 'SELECT account_id, amount FROM transactions WHERE id = ?',
+            sql: 'SELECT id FROM transactions WHERE id = ?',
             args: [id]
         });
-        const transaction = txRes.rows[0];
 
-        if (!transaction) {
+        if (!txRes.rows[0]) {
             return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
         }
 
-        const accountId = transaction.account_id as number;
-        const amount = transaction.amount as number;
-
+        // Balance reversal is handled automatically by trg_reverse_balance_on_delete trigger
         await dbClient.execute({
             sql: 'DELETE FROM transactions WHERE id = ?',
             args: [id]
-        });
-
-        await dbClient.execute({
-            sql: `UPDATE accounts 
-                  SET current_balance = current_balance - ?, last_updated = CURRENT_TIMESTAMP
-                  WHERE id = ?`,
-            args: [amount, accountId]
         });
 
         return NextResponse.json({ success: true });

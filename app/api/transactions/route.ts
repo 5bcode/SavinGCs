@@ -58,17 +58,11 @@ export async function POST(request: NextRequest) {
     try {
         const { accountId, userId, amount, description, transactionDate } = await request.json();
 
+        // Balance update is handled automatically by trg_update_balance_after_transaction trigger
         const txResult = await dbClient.execute({
             sql: `INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
                   VALUES (?, ?, ?, ?, ?) RETURNING id`,
             args: [accountId, userId, amount, description || '', transactionDate]
-        });
-
-        await dbClient.execute({
-            sql: `UPDATE accounts 
-                  SET current_balance = current_balance + ?, last_updated = CURRENT_TIMESTAMP
-                  WHERE id = ?`,
-            args: [amount, accountId]
         });
 
         let newTxId = Number(txResult.lastInsertRowid);
