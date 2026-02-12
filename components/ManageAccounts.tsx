@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSavingsData } from '@/hooks/useSavingsData';
+import RecurringTransactionsList from './RecurringTransactionsList';
 
 interface Account {
     id: number;
@@ -398,6 +399,11 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                     );
                 })
             )}
+
+            {/* Recurring Transactions Section */}
+            <div style={{ marginTop: 'var(--sp-2xl)', borderTop: '1px solid var(--border)', paddingTop: 'var(--sp-xl)' }}>
+                <RecurringTransactionsList />
+            </div>
         </div>
     );
 }

@@ -13,10 +13,16 @@ export const viewport: Viewport = {
   themeColor: '#070B1E',
 };
 
+import { ToastProvider } from '@/components/ui/Toast';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }

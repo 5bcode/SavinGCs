@@ -12,6 +12,7 @@ Key Features:
 🔐 Simple 2-user authentication
 📱 Fully mobile-responsive (iPhone 16 optimized)
 📈 Goal tracking with percentage completion
+🔄 Recurring Transactions (Weekly, Monthly, Yearly)
 
 Architecture
 Technology Stack
@@ -236,6 +237,22 @@ export async function GET() {
 **Status: DONE**
 - Database triggers (`trg_reverse_balance_on_delete`) now automatically handle balance reversal when a transaction is deleted.
 
+8. Recurring Transactions
+-------------------------
+
+**Status: DONE**
+- Implemented `recurring_transactions` table.
+- Added API endpoints for CRUD and processing.
+- Added `RecurringTransactionsList` component in "Manage Accounts".
+- Added "Make Recurring" option in `TransactionForm`.
+- Implemented "Check on Load" logic in `Dashboard` to process due transactions automatically.
+
+Verification Checklist
+----------------------
+- [ ] **Recurring**: Create a monthly recurring transaction. Reload the page to trigger processing (if due). Verify it appears in the transaction list.
+- [ ] **Toast Notifications**: Verify success/error messages appear as toasts instead of alerts.
+- [ ] **Dashboard**: Check that the new component structure renders correctly and performance is smooth.
+
 
 Performance Checklist
 ---------------------
@@ -371,7 +388,18 @@ Create .env.local for production:
 
 env
 NODE_ENV=production
-DATABASE_URL=libsql://... 
+DATABASE_URL=libsql://... GET /api/export/csv
+ - Export all data to CSV
+ 
+Recurring Transactions
+GET /api/recurring
+ - List recurring templates
+POST /api/recurring
+ - Create recurring template
+DELETE /api/recurring/[id]
+ - Delete recurring template
+POST /api/recurring/process
+ - Trigger processing of due transactions
 DATABASE_AUTH_TOKEN=...
 
 Project Structure

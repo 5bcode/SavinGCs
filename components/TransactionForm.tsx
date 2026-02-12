@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/Toast';
 
 interface Account {
     id: number;
@@ -21,6 +22,7 @@ interface TransactionFormProps {
 }
 
 export default function TransactionForm({ onSuccess, currentUser }: TransactionFormProps) {
+    const { addToast } = useToast();
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [pots, setPots] = useState<SavingsPot[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState('');
@@ -29,6 +31,10 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
     const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
     const [isDeposit, setIsDeposit] = useState(true);
     const [loading, setLoading] = useState(false);
+
+    // Recurring State
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [frequency, setFrequency] = useState('monthly');
 
     useEffect(() => { fetchData(); }, []);
 
@@ -41,6 +47,7 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
             setPots(potsData.pots || []);
         } catch (error) {
             console.error('Error fetching data:', error);
+            addToast('Failed to load accounts', 'error');
         }
     };
 
@@ -49,25 +56,46 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
         setLoading(true);
         try {
             const finalAmount = isDeposit ? parseFloat(amount) : -parseFloat(amount);
-            const res = await fetch('/api/transactions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    accountId: parseInt(selectedAccountId),
-                    userId: currentUser.id,
-                    amount: finalAmount,
-                    description,
-                    transactionDate
-                })
-            });
-            if (!res.ok) throw new Error('Failed to create transaction');
+
+            if (isRecurring) {
+                const res = await fetch('/api/recurring', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: parseInt(selectedAccountId),
+                        userId: currentUser.id,
+                        amount: finalAmount,
+                        description,
+                        frequency,
+                        startDate: transactionDate
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to create recurring transaction');
+                addToast('Recurring transaction created!', 'success');
+            } else {
+                const res = await fetch('/api/transactions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accountId: parseInt(selectedAccountId),
+                        userId: currentUser.id,
+                        amount: finalAmount,
+                        description,
+                        transactionDate
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to create transaction');
+                addToast('Transaction added successfully', 'success');
+            }
+
             setAmount('');
             setDescription('');
             setTransactionDate(new Date().toISOString().split('T')[0]);
+            setIsRecurring(false);
             onSuccess();
         } catch (error) {
             console.error('Error creating transaction:', error);
-            alert('Failed to create transaction');
+            addToast('Failed to save transaction', 'error');
         } finally {
             setLoading(false);
         }
@@ -75,7 +103,9 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
 
     return (
         <form onSubmit={handleSubmit}>
-            <h2 style={{ marginBottom: 'var(--sp-lg)' }}>New Transaction</h2>
+            <h2 style={{ marginBottom: 'var(--sp-lg)' }}>
+                {isRecurring ? 'New Recurring Rule' : 'New Transaction'}
+            </h2>
 
             <div className="form-group">
                 <label className="form-label">Type</label>
@@ -131,7 +161,9 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
             </div>
 
             <div className="form-group">
-                <label className="form-label" htmlFor="tx-date">Date</label>
+                <label className="form-label" htmlFor="tx-date">
+                    {isRecurring ? 'Start Date' : 'Date'}
+                </label>
                 <input
                     id="tx-date"
                     type="date"
@@ -141,6 +173,36 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
                     required
                 />
             </div>
+
+            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--sp-md)' }}>
+                <input
+                    type="checkbox"
+                    id="is-recurring"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                />
+                <label htmlFor="is-recurring" style={{ cursor: 'pointer', userSelect: 'none', fontSize: '0.9rem' }}>Make this recurring?</label>
+            </div>
+
+            {isRecurring && (
+                <div className="form-group animate-slide-in">
+                    <label className="form-label">Frequency</label>
+                    <div className="toggle-group">
+                        {['weekly', 'monthly', 'yearly'].map((freq) => (
+                            <button
+                                key={freq}
+                                type="button"
+                                className={`toggle-option${frequency === freq ? ' active' : ''}`}
+                                onClick={() => setFrequency(freq)}
+                                style={{ textTransform: 'capitalize' }}
+                            >
+                                {freq}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="form-group">
                 <label className="form-label" htmlFor="tx-description">Description</label>
@@ -155,7 +217,7 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-                {loading ? 'Adding...' : `Add ${isDeposit ? 'Deposit' : 'Withdrawal'}`}
+                {loading ? 'Saving...' : (isRecurring ? 'Set Recurring Rule' : `Add ${isDeposit ? 'Deposit' : 'Withdrawal'}`)}
             </button>
         </form>
     );
