@@ -129,9 +129,12 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
         savings: 'Savings', isa: 'ISA', current: 'Current', investment: 'Investment', other: 'Other'
     };
 
-    // Group by pot - Show ALL accounts (even zero balance) so user can manage them
+    const [showEmpty, setShowEmpty] = useState(false);
+
+    // Group by pot - Filter based on showEmpty toggle
     const grouped: Record<string, { color: string; accounts: Account[] }> = {};
     accounts.forEach((acc) => {
+        if (!showEmpty && acc.current_balance === 0) return;
         if (!grouped[acc.pot_name]) grouped[acc.pot_name] = { color: acc.pot_color, accounts: [] };
         grouped[acc.pot_name].accounts.push(acc);
     });
@@ -151,9 +154,25 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                 </button>
             </div>
 
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--sp-lg)' }}>
-                All your savings accounts, grouped by pot.
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--sp-lg)' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', margin: 0 }}>
+                    All your bank accounts, grouped by pot.
+                </p>
+                <button
+                    onClick={() => setShowEmpty(!showEmpty)}
+                    className="btn-pill"
+                    style={{
+                        fontSize: '0.7rem',
+                        padding: '4px 12px',
+                        background: showEmpty ? 'var(--purple-mid)' : 'var(--bg-secondary)',
+                        color: showEmpty ? 'white' : 'var(--text-secondary)',
+                        border: '1px solid var(--border)',
+                        cursor: 'pointer'
+                    }}
+                >
+                    {showEmpty ? 'Showing All' : 'Hide Empty'}
+                </button>
+            </div>
 
             {showForm && (
                 <form onSubmit={handleSubmit} className="card mb-lg">
