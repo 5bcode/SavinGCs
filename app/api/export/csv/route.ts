@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
-import { dbClient } from '@/lib/db_turso';
+import { NextRequest, NextResponse } from 'next/server';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
 import Papa from 'papaparse';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
-        // Get all pots with their accounts and transactions
         const result = await dbClient.execute(`
             SELECT 
                 sp.name as pot_name,

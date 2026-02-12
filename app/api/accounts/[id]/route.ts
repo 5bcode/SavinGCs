@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbClient } from '@/lib/db_turso';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
-    context: { params: Promise<{ id: string }> } // In Next.js 13+ app dir, params is a Promise
+    context: { params: Promise<{ id: string }> }
 ) {
-    // Await params first
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
     const { id } = await context.params;
+    await ensureInitialized();
 
     try {
         const accountRes = await dbClient.execute({
@@ -23,7 +27,6 @@ export async function GET(
             return NextResponse.json({ error: 'Account not found' }, { status: 404 });
         }
 
-        // Get balance history for this account
         const historyRes = await dbClient.execute({
             sql: `SELECT balance, recorded_date, created_at
                   FROM balance_history
@@ -33,7 +36,6 @@ export async function GET(
             args: [id]
         });
 
-        // Get transaction count for integrity warning
         const txCountRes = await dbClient.execute({
             sql: 'SELECT COUNT(*) as count FROM transactions WHERE account_id = ?',
             args: [id]
@@ -51,12 +53,15 @@ export async function PATCH(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
     const { id } = await context.params;
+    await ensureInitialized();
 
     try {
         const { accountName, accountType, owner, currentBalance } = await request.json();
 
-        // Get existing account for comparison
         const existingRes = await dbClient.execute({
             sql: 'SELECT * FROM accounts WHERE id = ?',
             args: [id]
@@ -67,14 +72,11 @@ export async function PATCH(
             return NextResponse.json({ error: 'Account not found' }, { status: 404 });
         }
 
-        // Handle potentially missing values by retaining existing
-        // Note: In SQL args, undefined becomes null usually, so we default manually.
         const newName = accountName ?? existing.account_name;
         const newType = accountType ?? existing.account_type;
         const newOwner = owner ?? existing.owner;
         const newBalance = currentBalance ?? existing.current_balance;
 
-        // Perform updates sequentially
         await dbClient.execute({
             sql: `UPDATE accounts 
                   SET account_name = ?, account_type = ?, owner = ?, current_balance = ?, last_updated = CURRENT_TIMESTAMP
@@ -82,8 +84,6 @@ export async function PATCH(
             args: [newName, newType, newOwner, newBalance, id]
         });
 
-        // If balance changed, log to balance_history
-        // Check inequality. existing.current_balance might be number or string depending on driver.
         if (currentBalance !== undefined && Number(currentBalance) !== Number(existing.current_balance)) {
             const today = new Date().toISOString().split('T')[0];
             await dbClient.execute({
@@ -109,14 +109,13 @@ export async function DELETE(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
     const { id } = await context.params;
+    await ensureInitialized();
 
     try {
-        // CASCADE will handle deleting related transactions and balance_history if DB supports/configured it.
-        // Turso supports foreign key constraints if enabled using PRAGMA foreign_keys = ON;
-        // This is enabled in init, but for good measure we might want to manually delete related items if paranoid,
-        // but let's trust FK cascade for now.
-
         await dbClient.execute({
             sql: 'DELETE FROM accounts WHERE id = ?',
             args: [id]

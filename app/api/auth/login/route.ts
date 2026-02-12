@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { dbClient } from '@/lib/db_turso';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
 
 export async function POST(request: NextRequest) {
+    await ensureInitialized();
+
     try {
         const { username, password, rememberMe } = await request.json();
 
@@ -27,8 +29,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // 'user.password_hash' might be accessed as property.
-        // Turso rows are flexible.
         const passwordHash = user.password_hash as string;
         const isValid = bcrypt.compareSync(password, passwordHash);
 

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbClient } from '@/lib/db_turso';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
         const result = await dbClient.execute(`
             SELECT 
@@ -21,6 +27,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
         const { name, goalAmount, color, icon, priority, goalDate } = await request.json();
 
@@ -30,7 +41,6 @@ export async function POST(request: NextRequest) {
             args: [name, goalAmount || null, color || '#059669', icon || 'piggy-bank', priority || 0, goalDate || null]
         });
 
-        // Some drivers return lastInsertRowid, others return rows with RETURNING.
         let newPotId = Number(result.lastInsertRowid);
         if (!newPotId && result.rows.length > 0) {
             newPotId = Number(result.rows[0].id);

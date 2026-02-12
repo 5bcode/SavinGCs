@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbClient } from '@/lib/db_turso';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
         const { searchParams } = new URL(request.url);
         const potId = searchParams.get('potId');
         const accountId = searchParams.get('accountId');
 
-        // Note: Turso driver uses ? for args.
         let query = `
             SELECT 
                 t.*,
@@ -29,7 +34,6 @@ export async function GET(request: NextRequest) {
         }
 
         if (accountId) {
-            // If accountId is provided, fix potId filter if needed or just append
             query += ` AND t.account_id = ?`;
             args.push(accountId);
         }
@@ -46,17 +50,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
         const { accountId, userId, amount, description, transactionDate } = await request.json();
 
-        // 1. Insert Transaction
         const txResult = await dbClient.execute({
             sql: `INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
                   VALUES (?, ?, ?, ?, ?) RETURNING id`,
             args: [accountId, userId, amount, description || '', transactionDate]
         });
 
-        // 2. Update Account Balance
         await dbClient.execute({
             sql: `UPDATE accounts 
                   SET current_balance = current_balance + ?, last_updated = CURRENT_TIMESTAMP

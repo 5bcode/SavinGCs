@@ -118,7 +118,15 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
 
                         <form onSubmit={handleAllocate} className="stack gap-md">
                             {error && (
-                                <div className="p-sm bg-red-100 text-red-700 rounded text-sm">
+                                <div style={{
+                                    padding: 'var(--sp-sm)',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: 'var(--r-md)',
+                                    color: 'var(--error)',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600
+                                }}>
                                     {error}
                                 </div>
                             )}
@@ -206,7 +214,6 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                         <button
                                             type="button"
                                             onClick={() => setAmount(maxAmount.toLocaleString('en-GB', { minimumFractionDigits: 2 }))}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-teal-500 hover:text-teal-400 px-2 py-1 rounded bg-teal-500/10 hover:bg-teal-500/20 transition-colors"
                                             style={{
                                                 position: 'absolute',
                                                 right: '8px',
@@ -228,7 +235,7 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                     )}
                                 </div>
                                 {maxAmount > 0 && (
-                                    <div className="text-xs text-gray-500 mt-1 text-right" style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px', textAlign: 'right' }}>
                                         Max: £{maxAmount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                                     </div>
                                 )}

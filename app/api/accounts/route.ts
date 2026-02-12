@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbClient } from '@/lib/db_turso';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
         const result = await dbClient.execute(`
-            SELECT 
-                a.*,
-                sp.name as pot_name,
-                sp.color as pot_color
+            SELECT a.*, sp.name as pot_name, sp.color as pot_color
             FROM accounts a
             JOIN savings_pots sp ON sp.id = a.pot_id
             ORDER BY sp.priority DESC, a.account_name ASC
@@ -21,61 +24,35 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
-        const body = await request.json();
-        // Handle both potential JSON structures if body is wrapped or flat
-        const { pot_id, account_name, account_type, current_balance, owner, starting_balance_date } = body;
+        const { potId, accountName, accountType, owner, currentBalance, startingBalanceDate } = await request.json();
 
-        // Map camelCase if coming from frontend with inconsistent naming, or snake_case
-        // The frontend currently sends: potId, accountName, accountType, currentBalance, owner, startingBalanceDate
-        // Let's support both just in case.
-        const potId = pot_id || body.potId;
-        const accountName = account_name || body.accountName;
-        const accountType = account_type || body.accountType;
-        const currentBalance = current_balance || body.currentBalance || 0;
-        const ownerName = owner || body.owner || 'Joint';
-        const startingDate = starting_balance_date || body.startingBalanceDate || new Date().toISOString().split('T')[0];
-
-        const balance = parseFloat(currentBalance);
-
-        // 1. Get User ID based on owner name (Manual lookup)
-        let userId = 1;
-        const userRes = await dbClient.execute({
-            sql: 'SELECT id FROM users WHERE display_name = ?',
-            args: [ownerName]
+        const result = await dbClient.execute({
+            sql: `INSERT INTO accounts (pot_id, account_name, account_type, owner, current_balance)
+                  VALUES (?, ?, ?, ?, ?) RETURNING id`,
+            args: [potId, accountName, accountType, owner || 'Joint', currentBalance || 0]
         });
 
-        if (userRes.rows.length > 0) {
-            userId = Number(userRes.rows[0].id);
+        let newId = Number(result.lastInsertRowid);
+        if (!newId && result.rows.length > 0) {
+            newId = Number(result.rows[0].id);
         }
 
-        // 2. Insert Account
-        const insertAccountRes = await dbClient.execute({
-            sql: `INSERT INTO accounts (pot_id, account_name, account_type, owner, current_balance, last_updated)
-                  VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
-            args: [potId, accountName, accountType, ownerName, balance]
-        });
-
-        // Some drivers return lastInsertRowid, others return rows with RETURNING.
-        // Turso/LibSQL via http often supports RETURNING id.
-        let newAccountId = Number(insertAccountRes.lastInsertRowid);
-        if (!newAccountId && insertAccountRes.rows.length > 0) {
-            newAccountId = Number(insertAccountRes.rows[0].id);
-        }
-
-        // 3. Insert Transaction
-        if (balance !== 0 || body.startingBalanceDate) {
+        // Record starting balance in history
+        if (currentBalance && startingBalanceDate) {
             await dbClient.execute({
-                sql: `INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
-                      VALUES (?, ?, ?, 'Opening Balance', ?)`,
-                args: [newAccountId, userId, balance, startingDate]
+                sql: `INSERT INTO balance_history (account_id, balance, recorded_date)
+                      VALUES (?, ?, ?)`,
+                args: [newId, currentBalance, startingBalanceDate]
             });
         }
 
-        return NextResponse.json({
-            success: true,
-            id: newAccountId
-        });
+        return NextResponse.json({ success: true, id: newId });
     } catch (error) {
         console.error('Error creating account:', error);
         return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });

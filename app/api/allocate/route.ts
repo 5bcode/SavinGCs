@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbClient } from '@/lib/db_turso';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
     try {
         const { sourceAccountId, targetPotId, amount } = await request.json();
 
@@ -33,10 +39,6 @@ export async function POST(request: NextRequest) {
 
         const targetAccount = targetAccountRes.rows[0];
         let targetAccountId: number | string;
-
-        // Perform updates. Ideally this should be a transaction.
-        // With Turso HTTP, we can use dbClient.batch() for some atomicity if available, 
-        // but dependent queries (needing targetAccountId) make batching hard without interactive tx.
 
         if (targetAccount) {
             targetAccountId = String(targetAccount.id);

@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dbClient } from '@/lib/db_turso';
+import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
 
 export async function DELETE(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
     const { id } = await context.params;
+    await ensureInitialized();
 
     try {
-        // Get transaction details before deleting to reverse balance
         const txRes = await dbClient.execute({
             sql: 'SELECT account_id, amount FROM transactions WHERE id = ?',
             args: [id]
@@ -21,10 +25,6 @@ export async function DELETE(
 
         const accountId = transaction.account_id as number;
         const amount = transaction.amount as number;
-
-        // Manually perform transaction logic: Delete then Update
-        // Or Update then Delete. If one fails, we have inconsistency. Turso HTTP doesn't allow easy rollback without interactive tx.
-        // We proceed with best effort sequential.
 
         await dbClient.execute({
             sql: 'DELETE FROM transactions WHERE id = ?',
