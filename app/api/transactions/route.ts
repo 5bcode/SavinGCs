@@ -59,6 +59,16 @@ export async function POST(request: NextRequest) {
     try {
         const { accountId, userId, amount, description, transactionDate } = await request.json();
 
+        // Get current account and pot info BEFORE transaction
+        const accountResult = await dbClient.execute({
+            sql: `SELECT a.*, sp.goal_amount, sp.name as pot_name 
+                  FROM accounts a 
+                  JOIN savings_pots sp ON sp.id = a.pot_id 
+                  WHERE a.id = ?`,
+            args: [accountId]
+        });
+        const account = accountResult.rows[0];
+
         // Balance update is handled automatically by trg_update_balance_after_transaction trigger
         const txResult = await dbClient.execute({
             sql: `INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
@@ -69,6 +79,30 @@ export async function POST(request: NextRequest) {
         let newTxId = Number(txResult.lastInsertRowid);
         if (!newTxId && txResult.rows.length > 0) {
             newTxId = Number(txResult.rows[0].id);
+        }
+
+        // Check for milestones (only for positive amounts/deposits)
+        if (amount > 0) {
+            // Get updated balance after transaction
+            const updatedAccountResult = await dbClient.execute({
+                sql: `SELECT current_balance FROM accounts WHERE id = ?`,
+                args: [accountId]
+            });
+            const updatedBalance = Number(updatedAccountResult.rows[0]?.current_balance || 0);
+
+            // Check and create milestones
+            const notifications = await checkAndCreateMilestones(
+                account.pot_id,
+                updatedBalance,
+                account.goal_amount,
+                userId
+            );
+
+            return NextResponse.json({
+                success: true,
+                id: newTxId,
+                notifications: notifications
+            });
         }
 
         return NextResponse.json({
