@@ -118,7 +118,7 @@ export default function NotificationsPanel({ onNavigate }: NotificationsPanelPro
                                     No notifications yet
                                 </div>
                                 <div style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', marginTop: '4px' }}>
-                                    We'll let you know when you hit savings milestones!
+                                    We&apos;ll let you know when you hit savings milestones!
                                 </div>
                             </div>
                         ) : (

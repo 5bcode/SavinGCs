@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface BalanceHistoryEntry {
     balance: number;
@@ -32,9 +32,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
     const [accountType, setAccountType] = useState('');
     const [owner, setOwner] = useState('');
 
-    useEffect(() => { fetchAccount(); }, [accountId]);
-
-    const fetchAccount = async () => {
+    const fetchAccount = useCallback(async () => {
         try {
             const res = await fetch(`/api/accounts/${accountId}`);
             const data = await res.json();
@@ -57,7 +55,9 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
         } finally {
             setLoading(false);
         }
-    };
+    }, [accountId]);
+
+    useEffect(() => { fetchAccount(); }, [fetchAccount]);
 
     const hasMetadataChanges = () => {
         if (!account) return false;
@@ -334,7 +334,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                             </div>
                             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                                 This account has <strong>{txCount} balance change{txCount !== 1 ? 's' : ''}</strong> in its history.
-                                Changing the type or owner won't affect historical records, but could make past entries misleading.
+                                Changing the type or owner won&apos;t affect historical records, but could make past entries misleading.
                             </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '6px', lineHeight: 1.5 }}>
                                 💡 <strong>Recommendation:</strong> If this is a fundamentally different account, consider deleting this one and creating a new account instead to keep your history clean.

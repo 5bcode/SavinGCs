@@ -13,6 +13,6 @@
   "/api/subgoals/route": "app/api/subgoals/route.js",
   "/api/transactions/[id]/route": "app/api/transactions/[id]/route.js",
   "/api/transactions/route": "app/api/transactions/route.js",
-  "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/page": "app/page.js"
+  "/page": "app/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js"
 }
