@@ -30,12 +30,12 @@ export async function POST(request: NextRequest) {
     await ensureInitialized();
 
     try {
-        const { potId, accountName, accountType, owner, currentBalance, startingBalanceDate } = await request.json();
+        const { potId, accountName, accountType, owner, currentBalance, startingBalanceDate, provider } = await request.json();
 
         const result = await dbClient.execute({
-            sql: `INSERT INTO accounts (pot_id, account_name, account_type, owner, current_balance)
-                  VALUES (?, ?, ?, ?, ?) RETURNING id`,
-            args: [potId, accountName, accountType, owner || 'Joint', currentBalance || 0]
+            sql: `INSERT INTO accounts (pot_id, account_name, account_type, owner, current_balance, provider)
+                  VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+            args: [potId, accountName, accountType, owner || 'Joint', currentBalance || 0, provider || '']
         });
 
         let newId = Number(result.lastInsertRowid);

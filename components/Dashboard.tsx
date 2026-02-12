@@ -12,6 +12,7 @@ interface Account {
     current_balance: number;
     pot_name: string;
     pot_color: string;
+    provider?: string;
 }
 
 interface SavingsPot {
@@ -311,7 +312,16 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
                         <div key={acc.id} className="flex justify-between items-center" style={{ padding: '6px 0', cursor: 'pointer' }} onClick={() => onAccountClick(acc.id)}>
                             <div className="flex items-center gap-sm">
                                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: pot.color, flexShrink: 0 }} />
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{acc.account_name}</span>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    {acc.provider ? (
+                                        <>
+                                            <span style={{ opacity: 0.7 }}>{acc.provider} – </span>
+                                            {acc.account_name}
+                                        </>
+                                    ) : (
+                                        acc.account_name
+                                    )}
+                                </span>
                                 <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', padding: '1px 6px', background: 'var(--bg-secondary)', borderRadius: 'var(--r-sm)' }}>
                                     {acc.account_type.toUpperCase()} ·
                                     <span style={{
@@ -347,7 +357,16 @@ function AccountBalanceRow({ account, onClick }: { account: Account; onClick: ()
                 </svg>
             </div>
             <div className="pot-info">
-                <div className="pot-name">{account.account_name}</div>
+                <div className="pot-name">
+                    {account.provider ? (
+                        <span style={{ fontWeight: 600 }}>
+                            <span style={{ fontWeight: 400, opacity: 0.8 }}>{account.provider} – </span>
+                            {account.account_name}
+                        </span>
+                    ) : (
+                        account.account_name
+                    )}
+                </div>
                 <div className="pot-meta">
                     {account.pot_name} · {account.account_type} ·
                     <span style={{

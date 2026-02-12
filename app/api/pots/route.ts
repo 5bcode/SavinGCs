@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     await ensureInitialized();
 
     try {
-        const result = await dbClient.execute(`
+        const potsResult = await dbClient.execute(`
             SELECT 
                 sp.*,
                 COALESCE(SUM(a.current_balance), 0) as total_balance
@@ -19,7 +19,16 @@ export async function GET(request: NextRequest) {
             ORDER BY sp.priority DESC, sp.created_at ASC
         `);
 
-        return NextResponse.json({ pots: result.rows });
+        // Fetch sub-goals
+        const subGoalsResult = await dbClient.execute(`SELECT * FROM sub_goals ORDER BY id ASC`);
+        const subGoals = subGoalsResult.rows;
+
+        const pots = potsResult.rows.map(pot => ({
+            ...pot,
+            sub_goals: subGoals.filter(sg => sg.pot_id === pot.id)
+        }));
+
+        return NextResponse.json({ pots });
     } catch (error) {
         console.error('Error fetching pots:', error);
         return NextResponse.json({ error: 'Failed to fetch pots' }, { status: 500 });

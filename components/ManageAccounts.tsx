@@ -12,6 +12,7 @@ interface Account {
     account_type: string;
     owner: string;
     current_balance: number;
+    provider?: string;
 }
 
 interface SavingsPot {
@@ -35,6 +36,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
 
     const [formData, setFormData] = useState({
         potId: '',
+        provider: '',
         accountName: '',
         accountType: 'savings',
         owner: defaultOwner,
@@ -60,6 +62,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     potId: parseInt(formData.potId),
+                    provider: formData.provider,
                     accountName: formData.accountName,
                     accountType: formData.accountType,
                     owner: formData.owner,
@@ -70,6 +73,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
             if (!res.ok) throw new Error('Failed to create account');
             setFormData({
                 potId: '',
+                provider: '',
                 accountName: '',
                 accountType: 'savings',
                 owner: defaultOwner,
@@ -109,6 +113,12 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
         grouped[acc.pot_name].accounts.push(acc);
     });
 
+    // Get unique existing providers for dropdown
+    const existingProviders = Array.from(new Set(accounts
+        .map(a => a.provider)
+        .filter((p): p is string => !!p && p.trim() !== '')
+    )).sort();
+
     return (
         <div>
             <div className="section-header">
@@ -134,10 +144,26 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                         </select>
                     </div>
                     <div className="form-group">
+                        <label className="form-label">Bank / Provider</label>
+                        <input
+                            type="text"
+                            className="form-input"
+                            value={formData.provider}
+                            onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
+                            placeholder="e.g., Monzo, HSBC"
+                            list="providers-list"
+                        />
+                        <datalist id="providers-list">
+                            {existingProviders.map((provider: string) => (
+                                <option key={provider} value={provider} />
+                            ))}
+                        </datalist>
+                    </div>
+                    <div className="form-group">
                         <label className="form-label">Account Name</label>
                         <input type="text" className="form-input" value={formData.accountName}
                             onChange={(e) => setFormData({ ...formData, accountName: e.target.value })}
-                            placeholder="e.g., HSBC Lifetime ISA" required />
+                            placeholder="e.g., Lifetime ISA" required />
                     </div>
                     <div className="form-group">
                         <label className="form-label">Account Type</label>
@@ -226,7 +252,16 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                                         </svg>
                                     </div>
                                     <div className="pot-info">
-                                        <div className="pot-name">{account.account_name}</div>
+                                        <div className="pot-name">
+                                            {account.provider ? (
+                                                <>
+                                                    <span style={{ fontWeight: 'normal', opacity: 0.8 }}>{account.provider} – </span>
+                                                    {account.account_name}
+                                                </>
+                                            ) : (
+                                                account.account_name
+                                            )}
+                                        </div>
                                         <div className="pot-meta">
                                             {typeLabels[account.account_type] || account.account_type} ·
                                             <span style={{
