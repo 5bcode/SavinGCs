@@ -122,8 +122,14 @@ export async function DELETE(
         });
 
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error deleting account:', error);
+        // Pass through trigger/constraint errors
+        if (error.message && (error.message.includes('ABORT') || error.message.includes('constraint'))) {
+            // Clean up the message if possible, or just send it
+            // libSQL might wrap it in 'LibsqlError: ...'
+            return NextResponse.json({ error: error.message }, { status: 400 });
+        }
         return NextResponse.json({ error: 'Failed to delete account' }, { status: 500 });
     }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSavingsData } from '@/hooks/useSavingsData';
 
 interface Account {
     id: number;
@@ -26,35 +27,30 @@ interface ManageAccountsProps {
 }
 
 export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }: ManageAccountsProps) {
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [pots, setPots] = useState<SavingsPot[]>([]);
+    const { accounts, pots, refresh } = useSavingsData();
     const [showForm, setShowForm] = useState(false);
+
+    // Determine default owner from current user, fallback to Joint
+    const defaultOwner = currentUser?.displayName || currentUser?.username || 'Joint';
+
     const [formData, setFormData] = useState({
         potId: '',
         accountName: '',
         accountType: 'savings',
-        owner: currentUser?.displayName || 'Joint',
+        owner: defaultOwner,
         currentBalance: '',
         startingBalanceDate: new Date().toISOString().split('T')[0]
     });
 
-    useEffect(() => { fetchData(); }, []);
+    // Default pot selection logic when form opens or pots load
+    useEffect(() => {
+        if (!formData.potId && pots && pots.length > 0) {
+            const unallocated = pots.find((p: any) => p.name === 'Unallocated');
+            if (unallocated) setFormData(prev => ({ ...prev, potId: String(unallocated.id) }));
+            else if (pots[0]) setFormData(prev => ({ ...prev, potId: String(pots[0].id) }));
+        }
+    }, [pots, formData.potId]);
 
-    const fetchData = async () => {
-        try {
-            const [accountsRes, potsRes] = await Promise.all([fetch('/api/accounts'), fetch('/api/pots')]);
-            const accountsData = await accountsRes.json();
-            const potsData = await potsRes.json();
-            const fetchedPots = potsData.pots || [];
-            setAccounts(accountsData.accounts || []);
-            setPots(fetchedPots);
-            // Default pot selection to Unallocated if not yet set
-            if (!formData.potId) {
-                const unallocated = fetchedPots.find((p: SavingsPot) => p.name === 'Unallocated');
-                if (unallocated) setFormData(prev => ({ ...prev, potId: String(unallocated.id) }));
-            }
-        } catch (error) { console.error('Error fetching data:', error); }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,12 +72,12 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                 potId: '',
                 accountName: '',
                 accountType: 'savings',
-                owner: currentUser?.displayName || 'Joint',
+                owner: defaultOwner,
                 currentBalance: '',
                 startingBalanceDate: new Date().toISOString().split('T')[0]
             });
             setShowForm(false);
-            fetchData();
+            refresh();
             onUpdate();
         } catch (error) { console.error('Error creating account:', error); alert('Failed to create account'); }
     };
@@ -90,10 +86,16 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
         if (!confirm('Delete this account and all its transactions?')) return;
         try {
             const res = await fetch(`/api/accounts/${id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error('Failed to delete account');
-            fetchData();
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to delete account');
+            }
+            refresh();
             onUpdate();
-        } catch (error) { console.error('Error deleting account:', error); alert('Failed to delete account'); }
+        } catch (error: any) {
+            console.error('Error deleting account:', error);
+            alert(error.message);
+        }
     };
 
     const typeLabels: Record<string, string> = {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { mutate } from 'swr';
 import Dashboard from '@/components/Dashboard';
 import Login from '@/components/Login';
 import SpreadsheetView from '@/components/SpreadsheetView';
@@ -15,7 +16,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showUpdateBalance, setShowUpdateBalance] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0); // Only for non-SWR components
 
   useEffect(() => { checkSession(); }, []);
 
@@ -40,6 +41,10 @@ export default function Home() {
 
   const handleBalanceUpdated = () => {
     setShowUpdateBalance(false);
+    // Refresh SWR cache
+    mutate('/api/accounts');
+    mutate('/api/pots');
+    // Refresh legacy components
     setRefreshKey((prev) => prev + 1);
   };
 
@@ -52,6 +57,10 @@ export default function Home() {
   };
 
   const handleAccountUpdated = () => {
+    // Refresh SWR cache
+    mutate('/api/accounts');
+    mutate('/api/pots');
+    // Refresh legacy components
     setRefreshKey((prev) => prev + 1);
   };
 
@@ -89,10 +98,10 @@ export default function Home() {
 
       {/* Main content */}
       <div className="app-content">
-        {currentView === 'home' && <Dashboard key={refreshKey} onUpdateBalance={() => setShowUpdateBalance(true)} onAccountClick={handleAccountClick} />}
-        {currentView === 'accounts' && <ManageAccounts key={refreshKey} onUpdate={() => setRefreshKey((prev) => prev + 1)} onAccountClick={handleAccountClick} currentUser={user} />}
+        {currentView === 'home' && <Dashboard onUpdateBalance={() => setShowUpdateBalance(true)} onAccountClick={handleAccountClick} />}
+        {currentView === 'accounts' && <ManageAccounts onUpdate={() => { mutate('/api/accounts'); mutate('/api/pots'); }} onAccountClick={handleAccountClick} currentUser={user} />}
         {currentView === 'history' && <SpreadsheetView key={refreshKey} />}
-        {currentView === 'manage' && <ManagePots key={refreshKey} onUpdate={() => setRefreshKey((prev) => prev + 1)} />}
+        {currentView === 'manage' && <ManagePots key={refreshKey} onUpdate={() => { mutate('/api/accounts'); mutate('/api/pots'); setRefreshKey((prev) => prev + 1); }} />}
       </div>
 
       {/* Bottom Tab Bar */}

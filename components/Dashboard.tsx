@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSavingsData } from '@/hooks/useSavingsData';
 import AllocateFunds from './AllocateFunds';
 
 interface Account {
@@ -30,31 +30,14 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onUpdateBalance, onAccountClick }: DashboardProps) {
-    const [pots, setPots] = useState<SavingsPot[]>([]);
-    const [accounts, setAccounts] = useState<Account[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { pots, accounts, isLoading, refresh } = useSavingsData();
 
-    useEffect(() => { fetchData(); }, []);
-
-    const fetchData = async () => {
-        try {
-            const [potsRes, accountsRes] = await Promise.all([fetch('/api/pots'), fetch('/api/accounts')]);
-            const potsData = await potsRes.json();
-            const accountsData = await accountsRes.json();
-            setPots(potsData.pots || []);
-            setAccounts(accountsData.accounts || []);
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const totalSavings = pots.reduce((sum, pot) => sum + (pot.total_balance || 0), 0);
-    const totalGoal = pots.reduce((sum, pot) => sum + (pot.goal_amount || 0), 0);
+    // Calculate totals directly from data
+    const totalSavings = pots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
+    const totalGoal = pots.reduce((sum: number, pot: any) => sum + (pot.goal_amount || 0), 0);
     const overallProgress = totalGoal > 0 ? (totalSavings / totalGoal) * 100 : 0;
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="stack">
                 <div className="skeleton" style={{ height: '220px' }} />
@@ -127,7 +110,7 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
                     <AllocateFunds
                         pots={pots}
                         accounts={accounts}
-                        onUpdate={onUpdateBalance}
+                        onUpdate={refresh}
                     />
                 </div>
             </div>
@@ -284,9 +267,9 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
             )}
 
             {/* Inline account breakdown */}
-            {accounts.length > 0 && (
+            {accounts.filter(a => a.current_balance !== 0).length > 0 && (
                 <div style={{ marginTop: 'var(--sp-md)', paddingTop: 'var(--sp-md)', borderTop: '1px solid var(--border)' }}>
-                    {accounts.map((acc) => (
+                    {accounts.filter(a => a.current_balance !== 0).map((acc) => (
                         <div key={acc.id} className="flex justify-between items-center" style={{ padding: '6px 0', cursor: 'pointer' }} onClick={() => onAccountClick(acc.id)}>
                             <div className="flex items-center gap-sm">
                                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: pot.color, flexShrink: 0 }} />
