@@ -5,11 +5,13 @@ const bcrypt = require('bcryptjs');
 
 // Load .env.local manually
 const envPath = path.join(__dirname, '..', '.env.local');
-const envContent = fs.readFileSync(envPath, 'utf-8');
-envContent.split(/\r?\n/).forEach(line => {
-    const match = line.match(/^([^=]+)=["']?(.+?)["']?\s*$/);
-    if (match) process.env[match[1].trim()] = match[2].trim();
-});
+if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    envContent.split(/\r?\n/).forEach(line => {
+        const match = line.match(/^([^=]+)=["']?(.+?)["']?\s*$/);
+        if (match) process.env[match[1].trim()] = match[2].trim();
+    });
+}
 
 const url = process.env.DATABASE_URL;
 const authToken = process.env.DATABASE_AUTH_TOKEN;
@@ -29,8 +31,12 @@ async function init() {
     console.log('\n2. Seeding users...');
     const userCount = await client.execute('SELECT COUNT(*) as count FROM users');
     if (Number(userCount.rows[0].count) === 0) {
+        const defaultPw = process.env.DEFAULT_PASSWORD;
+        if (!defaultPw) {
+            throw new Error('DEFAULT_PASSWORD environment variable is not set. Cannot seed users.');
+        }
         const salt = bcrypt.genSaltSync(10);
-        const pw = bcrypt.hashSync('changeme', salt);
+        const pw = bcrypt.hashSync(defaultPw, salt);
         await client.execute({ sql: 'INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)', args: ['gary', pw, 'Gary'] });
         await client.execute({ sql: 'INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)', args: ['catherine', pw, 'Catherine'] });
         console.log('   ✅ Users seeded (gary, catherine)');

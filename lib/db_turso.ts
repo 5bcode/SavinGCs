@@ -70,7 +70,11 @@ async function initializeDatabase() {
     const userCount = Number(userCountRes.rows[0].count);
 
     if (userCount === 0) {
-        const defaultPw = process.env.DEFAULT_PASSWORD || 'changeme';
+        const defaultPw = process.env.DEFAULT_PASSWORD;
+        if (!defaultPw) {
+            throw new Error('DEFAULT_PASSWORD environment variable is not set. Cannot initialize default users.');
+        }
+
         const salt = bcrypt.genSaltSync(10);
         const hash = bcrypt.hashSync(defaultPw, salt);
 
@@ -83,7 +87,7 @@ async function initializeDatabase() {
             sql: 'INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)',
             args: ['catherine', hash, 'Catherine']
         });
-        console.log('Created default users (password from DEFAULT_PASSWORD env var or "changeme")');
+        console.log('Created default users (password from DEFAULT_PASSWORD env var)');
     }
 
     // Default Pot

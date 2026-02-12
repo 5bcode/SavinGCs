@@ -270,13 +270,14 @@ Start the application:
 
 bash
 cd C:\Users\G\.gemini\antigravity\scratch\savings-tracker
+# Ensure DEFAULT_PASSWORD environment variable is set
 npm run dev
 Open browser: Navigate to http://localhost:3000
 
 Login with default credentials:
 
 Username: gary or catherine
-Password: changeme
+Password: (The value you set for DEFAULT_PASSWORD)
 
 Creating Your First Savings Structure
 Navigate to "Manage" tab
@@ -431,13 +432,13 @@ Default Credentials
 User 1:
 
 Username: gary
-Password: changeme
+Password: (The value you set for DEFAULT_PASSWORD)
 Display Name: Gary
 
 User 2:
 
 Username: catherine
-Password: changeme
+Password: (The value you set for DEFAULT_PASSWORD)
 Display Name: Catherine
 
 WARNING
