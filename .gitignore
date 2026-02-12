@@ -7,9 +7,9 @@
 /coverage
 
 # next.js
-/.next/
-/out/
-.next/
+/.next/*
+/out/*
+.next/*
 
 # production
 /build
@@ -284,3 +284,6 @@ next-env.d.ts
 .cursor/rules/websocket-realtime-builder/RULE.md
 .cursor/rules/zustand-state-builder/RULE.md
 .gitignore
+.next/cache/
+.next\cache*
+.next/cache/webpack/client-production/1.pack

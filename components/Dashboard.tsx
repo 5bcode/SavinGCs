@@ -151,11 +151,43 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
                         <div className="section-title">All Accounts</div>
                         <div className="section-link">{accounts.length} account{accounts.length !== 1 ? 's' : ''}</div>
                     </div>
-                    <div className="stack" style={{ gap: 'var(--sp-sm)' }}>
-                        {accounts.map((account) => (
-                            <AccountBalanceRow key={account.id} account={account} onClick={() => onAccountClick(account.id)} />
-                        ))}
-                    </div>
+
+                    {Object.entries(
+                        accounts
+                            .filter(a => a.current_balance !== 0)
+                            .reduce((acc, account) => {
+                                const owner = account.owner || 'Unassigned';
+                                if (!acc[owner]) acc[owner] = [];
+                                acc[owner].push(account);
+                                return acc;
+                            }, {} as Record<string, Account[]>)
+                    ).sort(([a], [b]) => a.localeCompare(b)).map(([owner, ownerAccounts]: [string, Account[]]) => (
+                        <div key={owner} style={{ marginBottom: 'var(--sp-lg)' }}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '0 4px',
+                                marginBottom: '8px'
+                            }}>
+                                <div style={{
+                                    fontSize: '0.9rem',
+                                    fontWeight: 700,
+                                    color: owner === 'Gary' ? '#3b82f6' : owner === 'Catherine' ? '#ec4899' : 'var(--text-secondary)'
+                                }}>
+                                    {owner}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                                    £{ownerAccounts.reduce((sum, acc) => sum + acc.current_balance, 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                </div>
+                            </div>
+                            <div className="stack" style={{ gap: 'var(--sp-sm)' }}>
+                                {ownerAccounts.map((account) => (
+                                    <AccountBalanceRow key={account.id} account={account} onClick={() => onAccountClick(account.id)} />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </>
             )}
         </div>

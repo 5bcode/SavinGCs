@@ -104,7 +104,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
 
     // Group by pot
     const grouped: Record<string, { color: string; accounts: Account[] }> = {};
-    accounts.forEach((acc) => {
+    accounts.filter(acc => acc.current_balance !== 0).forEach((acc) => {
         if (!grouped[acc.pot_name]) grouped[acc.pot_name] = { color: acc.pot_color, accounts: [] };
         grouped[acc.pot_name].accounts.push(acc);
     });
