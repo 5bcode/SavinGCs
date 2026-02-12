@@ -285,5 +285,5 @@ next-env.d.ts
 .cursor/rules/zustand-state-builder/RULE.md
 .gitignore
 .next/cache/
-.next\cache*
+.next\cache/*
 .next/cache/webpack/client-production/1.pack
