@@ -421,11 +421,9 @@ function AccountRow({ account, onClick, onDelete, typeLabels }: {
             </div>
             <div className="pot-info">
                 <div className="pot-name">
-                    {account.provider && (
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
-                            {account.provider}
-                        </div>
-                    )}
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                        {account.pot_name}
+                    </div>
                     {account.account_name}
                 </div>
                 <div className="pot-meta">
@@ -437,11 +435,9 @@ function AccountRow({ account, onClick, onDelete, typeLabels }: {
                     }}>
                         {account.owner || 'Joint'}
                     </span>
-                    {/* Only show Pot Name if we are in Owner view - wait, we reuse this row. Let's just always show it? Or distinct?
-                        Actually in Pot view, Pot name is header. In Owner view, Pot name is useful.
-                        Let's add it if it's not redundant.
-                    */}
-                    · <span style={{ opacity: 0.8 }}>{account.pot_name}</span>
+                    {account.provider && (
+                        <> · <span style={{ opacity: 0.8 }}>{account.provider}</span></>
+                    )}
                 </div>
             </div>
             <div className="flex items-center gap-sm">

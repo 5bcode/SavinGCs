@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SavinGCs — Savings Tracker',
-  description: 'Track your savings together. Built for couples saving for their first home.',
+  title: 'SavinGCs | Goals/Savings Tracker',
+  description: 'A tool to easily manage our combined savings and plan our financial goals, together.',
 };
 
 export const viewport: Viewport = {
