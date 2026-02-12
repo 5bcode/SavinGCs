@@ -24,20 +24,7 @@ export default function NotificationsPanel({ onNavigate }: NotificationsPanelPro
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const formatTime = (dateString: string) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diff = now.getTime() - date.getTime();
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
 
-        if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes}m ago`;
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return date.toLocaleDateString();
-    };
 
     return (
         <div ref={panelRef} style={{ position: 'relative' }}>
@@ -154,6 +141,7 @@ function NotificationItem({ notification, onMarkRead }: {
     notification: Notification;
     onMarkRead: () => void;
 }) {
+
     const getIcon = () => {
         switch (notification.milestone_type) {
             case 'GOAL_REACHED':
@@ -229,3 +217,19 @@ function NotificationItem({ notification, onMarkRead }: {
         </div>
     );
 }
+
+const formatTime = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
+};

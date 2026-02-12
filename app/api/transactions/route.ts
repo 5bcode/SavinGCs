@@ -92,9 +92,9 @@ export async function POST(request: NextRequest) {
 
             // Check and create milestones
             const notifications = await checkAndCreateMilestones(
-                account.pot_id,
+                Number(account.pot_id),
                 updatedBalance,
-                account.goal_amount,
+                account.goal_amount ? Number(account.goal_amount) : null,
                 userId
             );
 
