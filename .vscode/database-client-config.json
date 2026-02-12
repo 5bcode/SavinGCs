@@ -1,0 +1,94 @@
+{
+    "database": {
+        "1770859276172": {
+            "host": "127.0.0.1",
+            "port": 3306,
+            "dbType": "libSQL",
+            "name": "Turso",
+            "advance": {
+                "idleConfig": {
+                    "enable": true
+                },
+                "hideSystemSchema": true,
+                "groupingTables": false,
+                "loadMetaDataWhenExpandTreeView": true
+            },
+            "treeFeatures": [],
+            "usingSSH": false,
+            "useSocksProxy": false,
+            "useHTTPProxy": false,
+            "ssh": {
+                "host": "",
+                "port": 22,
+                "username": "root",
+                "type": "auto",
+                "privateKeyPath": "",
+                "serverType": "linux",
+                "connectTimeout": 5000,
+                "algorithms": {
+                    "kex": [
+                        "ecdh-sha2-nistp256",
+                        "ecdh-sha2-nistp384",
+                        "ecdh-sha2-nistp521",
+                        "diffie-hellman-group-exchange-sha256",
+                        "diffie-hellman-group14-sha256",
+                        "diffie-hellman-group15-sha512",
+                        "diffie-hellman-group16-sha512",
+                        "diffie-hellman-group17-sha512",
+                        "diffie-hellman-group18-sha512",
+                        "diffie-hellman-group14-sha1",
+                        "diffie-hellman-group-exchange-sha1"
+                    ],
+                    "cipher": [
+                        "aes128-gcm@openssh.com",
+                        "aes256-gcm@openssh.com",
+                        "aes128-ctr",
+                        "aes192-ctr",
+                        "aes256-ctr"
+                    ],
+                    "serverHostKey": [
+                        "ssh-ed25519",
+                        "ecdsa-sha2-nistp256",
+                        "ecdsa-sha2-nistp384",
+                        "ecdsa-sha2-nistp521",
+                        "rsa-sha2-512",
+                        "rsa-sha2-256",
+                        "ssh-rsa",
+                        "ssh-dss"
+                    ]
+                },
+                "disableSFTP": false,
+                "pruneSFTPRoot": false
+            },
+            "socksProxy": {
+                "host": null,
+                "port": 1080,
+                "type": 5
+            },
+            "httpProxy": {
+                "host": null,
+                "port": 3128
+            },
+            "global": false,
+            "remark": "Prod",
+            "color": "charts.red",
+            "savePassword": "Forever",
+            "readonly": false,
+            "sort": 12,
+            "group": "main",
+            "useSSL": false,
+            "fs": {
+                "encoding": "utf8",
+                "showHidden": true
+            },
+            "httpAuth": {
+                "authType": "token",
+                "basicToken": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzA4NDI3MTIsImlkIjoiYTZjNmFkYzAtOGZmMC00ZWFiLWI2YmQtMzkzZTY2NmU1OTc4IiwicmlkIjoiN2NkMGRkMWQtY2I5Ny00YTgyLTg2MGEtYWE2OTA4ZmUwMTJjIn0.7ZODctTK0O8MU2hvSzvpeU4hW6o-geBzWil5QGRGrySv3kcxAJ1YozQZ0kdgz1MSdl55lJJ3_wbjhb74tZCQBA",
+                "url": "libsql://savingcs-gpick.aws-eu-west-1.turso.io"
+            },
+            "key": "1770859276172",
+            "connectionKey": "database.connections"
+        }
+    },
+    "$schema": "https://cdn.database-client.com/dbclient/schema.json"
+}
