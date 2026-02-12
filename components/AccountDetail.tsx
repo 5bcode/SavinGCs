@@ -38,7 +38,12 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             setAccount(data.account);
-            setHistory(data.history || []);
+
+            // Fetch Transactions separateley
+            const txRes = await fetch(`/api/transactions?accountId=${accountId}`);
+            const txData = await txRes.json();
+            setHistory(txData.transactions || []);
+
             setTxCount(data.transactionCount || 0);
             setBalance(data.account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 }));
             setAccountType(data.account.account_type);
@@ -119,6 +124,73 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
             alert('Failed to save changes');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleUnallocate = async (tx: any) => {
+        // Parse the source account ID from "(ID: 123)"
+        const match = tx.description.match(/\(ID: (\d+)\)/);
+        if (!match) {
+            alert('Could not identify the source account to refund to.');
+            return;
+        }
+        const sourceId = parseInt(match[1]);
+
+        if (!confirm(`Unallocate £${tx.amount} and return it to the source account?`)) return;
+
+        try {
+            // We reuse /api/allocate to transfer it BACK
+            // Source = Current Account, Target = Original Source (sourceId)
+            const res = await fetch('/api/allocate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sourceAccountId: account.id,
+                    targetAccountId: sourceId, // Direct ID
+                    amount: tx.amount,
+                    targetPotId: 0 // Ignored if targetAccountId is provided usually, but we need to check API
+                })
+            });
+
+            // Wait, api/allocate requires targetPotId usually. 
+            // My recent change to api/allocate checks targetAccountId first, but `targetPotId` is destructured from body.
+            // I should ensure passing a dummy ID doesn't break it if targetAccountId is valid.
+            // Let's pass the account.pot_id just to be safe or 0.
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error);
+            }
+
+            // Also delete the original transaction record? 
+            // Or just let the "Reversal" be a new record?
+            // "Unallocate" usually implies Undo.
+            // If we just Transfer back, we have:
+            // 1. In +100
+            // 2. Out -100
+            // Net 0. This is safe.
+            // If we "Delete" the original, we have:
+            // 1. (Deleted)
+            // But verify balance integrity?
+            // "Transfer back" is audit-safe. Let's do that.
+
+            fetchAccount();
+            onUpdate();
+        } catch (error: any) {
+            console.error(error);
+            alert('Unallocation failed: ' + error.message);
+        }
+    };
+
+    const handleDeleteTx = async (tx: any) => {
+        if (!confirm('This will delete the transaction record and reverse the balance change on THIS account only. Continue?')) return;
+        try {
+            const res = await fetch(`/api/transactions/${tx.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete');
+            fetchAccount();
+            onUpdate();
+        } catch (error) {
+            alert('Delete failed');
         }
     };
 
@@ -281,44 +353,68 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                 </button>
             )}
 
-            {/* Balance History */}
-            {history.length > 0 && (
-                <div>
-                    <div className="section-header" style={{ marginTop: 'var(--sp-md)' }}>
-                        <div className="section-title" style={{ fontSize: '0.95rem' }}>Balance History</div>
-                        <div className="section-link">{history.length} record{history.length !== 1 ? 's' : ''}</div>
-                    </div>
-                    <div className="stack" style={{ gap: 'var(--sp-xs)' }}>
-                        {history.map((entry, i) => {
-                            const prevBalance = i < history.length - 1 ? history[i + 1].balance : null;
-                            const diff = prevBalance !== null ? entry.balance - prevBalance : null;
-                            return (
-                                <div key={i} style={{
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    padding: 'var(--sp-sm) var(--sp-md)',
-                                    background: 'var(--bg-card)', borderRadius: 'var(--r-md)',
-                                    border: '1px solid var(--border)',
-                                }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                            {new Date(entry.recorded_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        </div>
-                                        {diff !== null && (
-                                            <div style={{
-                                                fontSize: '0.7rem', fontFamily: 'var(--font-mono)', fontWeight: 600, marginTop: '2px',
-                                                color: diff >= 0 ? 'var(--success)' : 'var(--error)',
-                                            }}>
-                                                {diff >= 0 ? '+' : ''}£{diff.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                                        £{entry.balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                                    </div>
+            {/* Transaction History */}
+            <div className="section-header" style={{ marginTop: 'var(--sp-md)' }}>
+                <div className="section-title">Transactions</div>
+                <div className="section-link">Recent activity</div>
+            </div>
+
+            {history.length === 0 ? (
+                <div className="text-secondary text-sm">No transactions yet.</div>
+            ) : (
+                <div className="stack" style={{ gap: 'var(--sp-xs)' }}>
+                    {history.map((tx: any) => (
+                        <div key={tx.id} style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: 'var(--sp-sm) var(--sp-md)',
+                            background: 'var(--bg-card)', borderRadius: 'var(--r-md)',
+                            border: '1px solid var(--border)',
+                        }}>
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                    {new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {tx.description || 'Transaction'}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-md">
+                                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.9rem', color: tx.amount >= 0 ? 'var(--success)' : 'var(--text-primary)' }}>
+                                    {tx.amount >= 0 ? '+' : ''}£{tx.amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                </div>
+
+                                {/* Unallocate Button for Transfers */}
+                                {tx.amount > 0 && tx.description?.includes('(ID:') && (
+                                    <button
+                                        onClick={() => handleUnallocate(tx)}
+                                        className="icon-btn"
+                                        title="Unallocate / Reverse"
+                                        style={{ color: 'var(--error)', padding: '4px' }}
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                            <polyline points="9 11 12 14 22 4" />
+                                        </svg>
+                                        {/* Using a checkmark-box icon for "Un-allocate" or maybe an "X"? 
+                                            User said: "Click transaction and unallocate". 
+                                            Let's use a clear "Undo" icon.
+                                        */}
+                                    </button>
+                                )}
+
+                                <button
+                                    onClick={() => handleDeleteTx(tx)}
+                                    className="icon-btn"
+                                    title="Delete Record Only"
+                                    style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

@@ -41,12 +41,7 @@ export async function POST(request: NextRequest) {
 
             finalTargetId = targetAccountId;
 
-            await dbClient.execute({
-                sql: `UPDATE accounts 
-                      SET current_balance = current_balance + ?, last_updated = CURRENT_TIMESTAMP 
-                      WHERE id = ?`,
-                args: [amount, finalTargetId]
-            });
+            // No direct update needed, using transactions now
         } else {
             // Fallback: Find by matching details or Create New
             const valName = source.account_name;
@@ -66,31 +61,84 @@ export async function POST(request: NextRequest) {
 
             if (existingTarget) {
                 finalTargetId = String(existingTarget.id);
-                await dbClient.execute({
-                    sql: `UPDATE accounts 
-                          SET current_balance = current_balance + ?, last_updated = CURRENT_TIMESTAMP 
-                          WHERE id = ?`,
-                    args: [amount, finalTargetId]
-                });
+                // No direct update needed
             } else {
                 const insertRes = await dbClient.execute({
                     sql: `INSERT INTO accounts (pot_id, account_name, account_type, owner, current_balance, last_updated)
-                          VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
-                    args: [targetPotId, valName, valType, valOwner, amount]
+                          VALUES (?, ?, ?, ?, 0, CURRENT_TIMESTAMP) RETURNING id`,
+                    args: [targetPotId, valName, valType, valOwner]
                 });
                 finalTargetId = String(insertRes.lastInsertRowid || insertRes.rows[0]?.id);
             }
         }
 
-        // 3. Update Source Account
+        // Fetch final Target Account Name for description
+        const finalTargetRes = await dbClient.execute({
+            sql: 'SELECT account_name FROM accounts WHERE id = ?',
+            args: [finalTargetId]
+        });
+        const targetAccount = finalTargetRes.rows[0];
+
+        // 3. Create Transactions (Triggers will handle balance updates)
+        const today = new Date().toISOString().split('T')[0];
+
+        // Transaction A: Debit Source
         await dbClient.execute({
-            sql: `UPDATE accounts 
-                  SET current_balance = current_balance - ?, last_updated = CURRENT_TIMESTAMP 
-                  WHERE id = ?`,
-            args: [amount, sourceAccountId]
+            sql: `INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
+                  VALUES (?, ?, ?, ?, ?)`,
+            args: [
+                sourceAccountId,
+                user.id,
+                -amount,
+                `Transfer to ${targetAccount?.account_name || 'Target Account'} (ID: ${finalTargetId})`,
+                today
+            ]
         });
 
-        return NextResponse.json({ success: true, result: { sourceId: sourceAccountId, targetId: targetAccountId } });
+        // Transaction B: Credit Target
+        await dbClient.execute({
+            sql: `INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
+                  VALUES (?, ?, ?, ?, ?)`,
+            args: [
+                finalTargetId,
+                user.id,
+                amount,
+                `Transfer from ${source.account_name} (ID: ${sourceAccountId})`,
+                today
+            ]
+        });
+
+        // Trigger milestone check for Target Account (since it received funds)
+        // We can do this by calling the internal logic or just rely on the user navigating/refreshing.
+        // For robustness, could call checkAndCreateMilestones here, but let's stick to the transaction trigger pattern for now.
+        // Actually, api/transactions POST does checking. We are bypassing that endpoint but inserting directly.
+        // Ideally we should check milestones here too or the user won't get the notification immediately.
+        // Let's add basic milestone check for the target pot.
+
+        const updatedPotResult = await dbClient.execute({
+            sql: `SELECT SUM(current_balance) as total FROM accounts WHERE pot_id = ?`,
+            args: [targetPotId]
+        });
+        // Note: The trigger might not have fired yet if we are in same transaction? 
+        // LibSQL/SQLite triggers fire immediately per statement. So balance IS updated.
+        const updatedPotBalance = Number(updatedPotResult.rows[0]?.total || 0);
+
+        // Fetch pot goal
+        const potRes = await dbClient.execute({
+            sql: 'SELECT goal_amount FROM savings_pots WHERE id = ?',
+            args: [targetPotId]
+        });
+        const goalAmount = potRes.rows[0]?.goal_amount;
+
+        const { checkAndCreateMilestones } = await import('@/lib/notifications');
+        await checkAndCreateMilestones(
+            Number(targetPotId),
+            updatedPotBalance,
+            goalAmount ? Number(goalAmount) : null,
+            user.id
+        );
+
+        return NextResponse.json({ success: true, result: { sourceId: sourceAccountId, targetId: finalTargetId } });
     } catch (error: any) {
         console.error('Allocation error:', error);
         return NextResponse.json({ error: error.message || 'Allocation failed' }, { status: 500 });
