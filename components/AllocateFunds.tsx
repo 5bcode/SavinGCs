@@ -187,7 +187,7 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
 
                             <div className="form-group">
                                 <label className="form-label">Amount (£)</label>
-                                <div className="relative">
+                                <div className="relative" style={{ position: 'relative' }}>
                                     <input
                                         type="text"
                                         className="form-input"

@@ -17,7 +17,7 @@ Architecture
 Technology Stack
 Frontend: Next.js 14 (App Router), TypeScript, React
 Styling: Custom CSS with design system (no Tailwind used for uniqueness)
-Database: SQLite with better-sqlite3
+Database: LibSQL with @libsql/client (supports local file and Turso Cloud)
 Authentication: bcrypt password hashing with session cookies
 Export: Papa Parse for CSV generation
 
@@ -33,7 +33,7 @@ All UI elements meet the 48px minimum tap target requirement for mobile accessib
 Database Schema
 Four main tables:
 
-users - Authentication (2 users: user1, user2)
+users - Authentication (2 users: gary, catherine)
 savings_pots - Savings categories (House, Emergency, etc.)
 accounts - Individual bank accounts within pots
 transactions - Complete transaction ledger
@@ -124,32 +124,12 @@ Refactoring & Optimizations
 1. Database Layer (lib/db.ts)
 ------------------------------
 
-**Current Issues:**
-- `initializeDatabase()` runs synchronously on import (problematic for serverless/edge)
-- Using synchronous bcrypt methods blocks the event loop
-- No proper error boundaries for database connection failures
 
-**Recommended Fixes:**
-```typescript
-// Use async initialization pattern
-let db: Database.Database | null = null;
+**Status: DONE**
+- Migrated to `@libsql/client` in `lib/db_turso.ts`.
+- Supports both local `savings-tracker.db` and Turso Cloud.
+- Async initialization implemented.
 
-export async function getDatabase(): Promise<Database.Database> {
-  if (db) return db;
-  
-  const dbPath = join(process.cwd(), 'savings-tracker.db');
-  db = new Database(dbPath);
-  db.pragma('foreign_keys = ON');
-  
-  await initializeDatabase();
-  return db;
-}
-
-// Use async bcrypt with proper salt rounds
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12); // 12 rounds for better security
-}
-```
 
 2. API Routes - Input Validation
 ----------------------------------
@@ -181,36 +161,12 @@ export async function POST(request: NextRequest) {
 3. Component Performance (Dashboard.tsx)
 ------------------------------------------
 
-**Current Issues:**
-- Data fetching on every mount (no caching)
-- No error boundaries
-- getIcon function recreated on each render
-- Inline styles reduce maintainability
 
-**Recommended Fixes:**
-```typescript
-'use client';
+**Status: DONE**
+- Implemented `swr` for data fetching and caching.
+- `useSavingsData` hook centralized data access.
+- Loading states handled properly.
 
-import useSWR from 'swr';
-import { memo } from 'react';
-
-const fetcher = (url: string) => fetch(url).then(res => res.json());
-
-const PotCard = memo(function PotCard({ pot }: { pot: SavingsPot }) {
-  // Component logic
-});
-
-const ICON_MAP: Record<string, string> = {
-  'piggy-bank': '🐷',
-  'house': '🏡',
-  // ...
-};
-
-function Dashboard() {
-  const { data, error, isLoading } = useSWR('/api/pots', fetcher);
-  // ...
-}
-```
 
 4. Security Enhancements
 -----------------------
@@ -276,25 +232,10 @@ export async function GET() {
 7. Transaction Deletion Validation
 ----------------------------------
 
-**Current Issue:** Deleting transactions reverses balance but doesn't validate
 
-**Recommended Fix:**
-```typescript
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const result = db.transaction(() => {
-    const tx = db.prepare('SELECT * FROM transactions WHERE id = ?').get(params.id);
-    if (!tx) throw new Error('Transaction not found');
-    
-    // Reverse the balance
-    db.prepare(`UPDATE accounts SET current_balance = current_balance - ? WHERE id = ?`)
-      .run(tx.amount, tx.account_id);
-    
-    db.prepare('DELETE FROM transactions WHERE id = ?').run(params.id);
-  })();
-  
-  return NextResponse.json({ success: true });
-}
-```
+**Status: DONE**
+- Database triggers (`trg_reverse_balance_on_delete`) now automatically handle balance reversal when a transaction is deleted.
+
 
 Performance Checklist
 ---------------------
@@ -317,8 +258,8 @@ Open browser: Navigate to http://localhost:3000
 
 Login with default credentials:
 
-Username: user1 or user2
-Password: changeme123
+Username: gary or catherine
+Password: changeme
 
 Creating Your First Savings Structure
 Navigate to "Manage" tab
@@ -399,26 +340,23 @@ Mobile Testing (iPhone 16):
 
 Deployment
 Current Status
-The app runs locally on http://localhost:3000 with SQLite database stored in the project directory.
+The app runs locally on http://localhost:3000 using LibSQL (SQLite-compatible) which supports both local files and cloud replication (Turso).
 
 For Production Use
 Option 1: Cloud Run (Recommended for Remote Access)
-Migrate to PostgreSQL:
+1. Create a Turso database and get the URL/Token.
+2. Deploy to Cloud Run:
+   - Use the `cloudrun` MCP server tools or `gcloud` CLI.
+   - Deploy the project folder.
+   - Set environment variables `DATABASE_URL` and `DATABASE_AUTH_TOKEN`.
 
-Replace better-sqlite3 with pg/node-postgres
-Set up Railway, Supabase, or Neon database
-Update connection string in environment variables
-Deploy to Cloud Run:
-
-Use the cloudrun MCP server tools
-Deploy the project folder
-Set environment variables
 Option 2: Vercel (Easiest)
 bash
 npm install -g vercel
 vercel login
 vercel
-Note: Vercel doesn't support SQLite. You'll need to migrate to a hosted database first.
+
+Note: Ensure you add `DATABASE_URL` and `DATABASE_AUTH_TOKEN` (from Turso) in your Vercel project settings.
 
 Option 3: Self-Hosted (Home Server)
 Build the production version:
@@ -426,16 +364,15 @@ Build the production version:
 bash
 npm run build
 npm start
-Set up port forwarding on your router
-
-Use a service like Cloudflare Tunnel for secure access
+Set up port forwarding on your router or use Cloudflare Tunnel.
 
 Environment Variables
 Create .env.local for production:
 
 env
 NODE_ENV=production
-DATABASE_URL=postgresql://... # If using PostgreSQL
+DATABASE_URL=libsql://... 
+DATABASE_AUTH_TOKEN=...
 
 Project Structure
 savings-tracker/
@@ -457,21 +394,23 @@ savings-tracker/
 │   ├── ManagePots.tsx      # Pot management
 │   └── ManageAccounts.tsx  # Account management
 ├── lib/
-│   ├── db.ts              # Database connection
+│   ├── db.ts              # Deprecated
+│   ├── db_turso.ts        # Turso database connection (Active)
 │   └── schema.sql         # Database schema
 └── savings-tracker.db     # SQLite database
 
 Default Credentials
 User 1:
 
-Username: user1
-Password: changeme123
-Display Name: Partner 1
+Username: gary
+Password: changeme
+Display Name: Gary
+
 User 2:
 
-Username: user2
-Password: changeme123
-Display Name: Partner 2
+Username: catherine
+Password: changeme
+Display Name: Catherine
 
 WARNING
 

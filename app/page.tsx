@@ -16,7 +16,12 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showUpdateBalance, setShowUpdateBalance] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0); // Only for non-SWR components
+
+  const refreshAll = () => {
+    mutate('/api/accounts');
+    mutate('/api/pots');
+    mutate('/api/transactions');
+  };
 
   useEffect(() => { checkSession(); }, []);
 
@@ -41,11 +46,7 @@ export default function Home() {
 
   const handleBalanceUpdated = () => {
     setShowUpdateBalance(false);
-    // Refresh SWR cache
-    mutate('/api/accounts');
-    mutate('/api/pots');
-    // Refresh legacy components
-    setRefreshKey((prev) => prev + 1);
+    refreshAll();
   };
 
   const handleAccountClick = (accountId: number) => {
@@ -57,11 +58,7 @@ export default function Home() {
   };
 
   const handleAccountUpdated = () => {
-    // Refresh SWR cache
-    mutate('/api/accounts');
-    mutate('/api/pots');
-    // Refresh legacy components
-    setRefreshKey((prev) => prev + 1);
+    refreshAll();
   };
 
   if (loading) {
@@ -99,9 +96,9 @@ export default function Home() {
       {/* Main content */}
       <div className="app-content">
         {currentView === 'home' && <Dashboard onUpdateBalance={() => setShowUpdateBalance(true)} onAccountClick={handleAccountClick} />}
-        {currentView === 'accounts' && <ManageAccounts onUpdate={() => { mutate('/api/accounts'); mutate('/api/pots'); }} onAccountClick={handleAccountClick} currentUser={user} />}
-        {currentView === 'history' && <SpreadsheetView key={refreshKey} />}
-        {currentView === 'manage' && <ManagePots key={refreshKey} onUpdate={() => { mutate('/api/accounts'); mutate('/api/pots'); setRefreshKey((prev) => prev + 1); }} />}
+        {currentView === 'accounts' && <ManageAccounts onUpdate={refreshAll} onAccountClick={handleAccountClick} currentUser={user} />}
+        {currentView === 'history' && <SpreadsheetView />}
+        {currentView === 'manage' && <ManagePots onUpdate={refreshAll} />}
       </div>
 
       {/* Bottom Tab Bar */}

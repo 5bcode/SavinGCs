@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbClient, ensureInitialized } from '@/lib/db_turso';
 import { getSessionUser, unauthorizedResponse } from '@/lib/auth';
+import { checkAndCreateMilestones } from '@/lib/notifications';
 
 export async function GET(request: NextRequest) {
     const user = getSessionUser(request);

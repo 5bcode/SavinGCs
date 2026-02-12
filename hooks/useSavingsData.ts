@@ -17,3 +17,14 @@ export function useSavingsData() {
         }
     };
 }
+
+export function useTransactions() {
+    const { data, error, isLoading } = useSWR('/api/transactions', fetcher);
+
+    return {
+        transactions: data?.transactions || [],
+        isLoading,
+        isError: error,
+        refresh: () => mutate('/api/transactions')
+    };
+}

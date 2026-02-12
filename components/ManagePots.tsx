@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useSavingsData } from '@/hooks/useSavingsData';
 
 interface SavingsPot {
     id: number;
@@ -31,22 +32,12 @@ const iconPairs: [string, string][] = [
 const colorOptions = ['#7B2FE0', '#059669', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#8b5cf6'];
 
 export default function ManagePots({ onUpdate }: ManagePotsProps) {
-    const [pots, setPots] = useState<SavingsPot[]>([]);
+    const { pots, refresh } = useSavingsData();
     const [showForm, setShowForm] = useState(false);
     const [editingPotId, setEditingPotId] = useState<number | null>(null);
     const [formData, setFormData] = useState({ name: '', goalAmount: '', goalDate: '', color: '#7B2FE0', icon: 'piggy-bank' });
     const [editData, setEditData] = useState({ name: '', goalAmount: '', goalDate: '', color: '#7B2FE0', icon: 'piggy-bank' });
     const [saving, setSaving] = useState(false);
-
-    useEffect(() => { fetchPots(); }, []);
-
-    const fetchPots = async () => {
-        try {
-            const res = await fetch('/api/pots');
-            const data = await res.json();
-            setPots(data.pots || []);
-        } catch (error) { console.error('Error fetching pots:', error); }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,7 +57,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
             if (!res.ok) throw new Error('Failed to create pot');
             setFormData({ name: '', goalAmount: '', goalDate: '', color: '#7B2FE0', icon: 'piggy-bank' });
             setShowForm(false);
-            fetchPots();
+            refresh();
             onUpdate();
         } catch (error) {
             console.error('Error creating pot:', error);
@@ -110,7 +101,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
             });
             if (!res.ok) throw new Error('Failed to update pot');
             setEditingPotId(null);
-            fetchPots();
+            refresh();
             onUpdate();
         } catch (error) {
             console.error('Error updating pot:', error);
@@ -125,7 +116,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
         try {
             const res = await fetch(`/api/pots/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete pot');
-            fetchPots();
+            refresh();
             onUpdate();
         } catch (error) { console.error('Error deleting pot:', error); alert('Failed to delete pot'); }
     };

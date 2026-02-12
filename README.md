@@ -71,12 +71,14 @@ Create a `.env.local` file in the project root:
 
 ## 📖 Usage
 
+## 📖 Usage
+
 ### Default Credentials
 
 | User | Username | Password | Display Name |
 |------|----------|----------|--------------|
-| 1 | `user1` | `changeme123` | Partner 1 |
-| 2 | `user2` | `changeme123` | Partner 2 |
+| 1 | `gary` | `changeme` | Gary |
+| 2 | `catherine` | `changeme` | Catherine |
 
 > [!CAUTION]
 > Change these passwords immediately in any production deployment!
@@ -111,10 +113,10 @@ The app uses a mobile-style bottom tab bar:
 | **Language** | TypeScript |
 | **UI** | React 18 |
 | **Styling** | Custom CSS design system (no Tailwind) |
-| **Database** | SQLite (local) / [Turso](https://turso.tech/) (production) |
+| **Database** | LibSQL / [Turso](https://turso.tech/) (Local file or Cloud) |
 | **Auth** | bcrypt password hashing + session cookies |
 | **Export** | Papa Parse (CSV generation) |
-| **Deployment** | Docker / Cloud Run |
+| **Deployment** | Docker / Cloud Run / Vercel |
 
 ### Design System
 

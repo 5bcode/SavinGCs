@@ -30,7 +30,7 @@ async function init() {
     const userCount = await client.execute('SELECT COUNT(*) as count FROM users');
     if (Number(userCount.rows[0].count) === 0) {
         const salt = bcrypt.genSaltSync(10);
-        const pw = bcrypt.hashSync('loveyou', salt);
+        const pw = bcrypt.hashSync('changeme', salt);
         await client.execute({ sql: 'INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)', args: ['gary', pw, 'Gary'] });
         await client.execute({ sql: 'INSERT INTO users (username, password_hash, display_name) VALUES (?, ?, ?)', args: ['catherine', pw, 'Catherine'] });
         console.log('   ✅ Users seeded (gary, catherine)');

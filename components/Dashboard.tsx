@@ -34,8 +34,14 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
 
     // Calculate totals directly from data
     const totalSavings = pots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
-    const totalGoal = pots.reduce((sum: number, pot: any) => sum + (pot.goal_amount || 0), 0);
-    const overallProgress = totalGoal > 0 ? (totalSavings / totalGoal) * 100 : 0;
+
+    // For progress, exclude 'Unallocated' pot
+    const progressPots = pots.filter((p: any) => p.name !== 'Unallocated');
+    const savingsForProgress = progressPots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
+    const totalGoal = progressPots.reduce((sum: number, pot: any) => sum + (pot.goal_amount || 0), 0);
+
+    // Net worth uses totalSavings. Progress uses filtered values.
+    const overallProgress = totalGoal > 0 ? (savingsForProgress / totalGoal) * 100 : 0;
 
     if (isLoading) {
         return (
@@ -81,10 +87,10 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
                                 Savings Progress
                             </div>
                             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.4rem', fontWeight: 700, color: 'white' }}>
-                                £{totalSavings.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                £{savingsForProgress.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                             </div>
                             <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '4px' }}>
-                                £{(totalGoal - totalSavings > 0 ? totalGoal - totalSavings : 0).toLocaleString('en-GB')} remaining
+                                £{(totalGoal - savingsForProgress > 0 ? totalGoal - savingsForProgress : 0).toLocaleString('en-GB')} remaining
                             </div>
                         </div>
                     </div>

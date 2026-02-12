@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useTransactions } from '@/hooks/useSavingsData';
 
 import NetWorthChart from './NetWorthChart';
 
@@ -15,22 +16,7 @@ interface Transaction {
 }
 
 export default function SpreadsheetView() {
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => { fetchTransactions(); }, []);
-
-    const fetchTransactions = async () => {
-        try {
-            const res = await fetch('/api/transactions');
-            const data = await res.json();
-            setTransactions(data.transactions || []);
-        } catch (error) {
-            console.error('Error fetching transactions:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { transactions, isLoading: loading } = useTransactions();
 
     const handleExport = async () => {
         try {

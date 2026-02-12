@@ -66,6 +66,53 @@ CREATE INDEX IF NOT EXISTS idx_balance_history_account ON balance_history (accou
 CREATE INDEX IF NOT EXISTS idx_balance_history_date ON balance_history (recorded_date DESC);
 
 -- ============================================================
+-- MILESTONES & NOTIFICATIONS
+-- ============================================================
+
+-- Milestones achieved for savings pots
+CREATE TABLE IF NOT EXISTS milestones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pot_id INTEGER NOT NULL,
+    milestone_type TEXT NOT NULL, -- '25%', '50%', '75%', '100%', 'GOAL_REACHED'
+    milestone_value REAL NOT NULL,
+    achieved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pot_id) REFERENCES savings_pots (id) ON DELETE CASCADE,
+    UNIQUE(pot_id, milestone_type)
+);
+
+-- In-app notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL, -- 'milestone', 'system', 'alert'
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    pot_id INTEGER,
+    milestone_type TEXT,
+    is_read BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (pot_id) REFERENCES savings_pots (id) ON DELETE CASCADE
+);
+
+-- Web Push API subscriptions
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Indexes for notifications
+CREATE INDEX IF NOT EXISTS idx_milestones_pot ON milestones (pot_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications (user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions (user_id);
+
+-- ============================================================
 -- TRIGGERS — Data Integrity & Automation
 -- ============================================================
 
