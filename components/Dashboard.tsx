@@ -209,6 +209,21 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
     const clampedProgress = Math.min(progress, 100);
     const isGoalMet = pot.goal_amount && pot.total_balance >= pot.goal_amount;
 
+    // Calculate sub-goal progress (Waterfall)
+    let remainingForSubGoals = pot.total_balance;
+    const subGoalsWithProgress = (pot.sub_goals || []).map(sg => {
+        let funded = 0;
+        let percent = 0;
+
+        if (remainingForSubGoals > 0) {
+            funded = Math.min(remainingForSubGoals, sg.target_amount);
+            remainingForSubGoals -= funded;
+            percent = (funded / sg.target_amount) * 100;
+        }
+
+        return { ...sg, funded, percent };
+    });
+
     // Calculate monthly savings target
     let monthlySavingsTarget: number | null = null;
     let monthsRemaining: number | null = null;
@@ -309,6 +324,35 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
                     <div className="flex justify-between" style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
                         <span>{clampedProgress.toFixed(1)}% complete</span>
                         <span>£{Math.max(0, (pot.goal_amount || 0) - pot.total_balance).toLocaleString('en-GB')} to go</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Sub-goals Breakdown */}
+            {subGoalsWithProgress.length > 0 && (
+                <div style={{ marginTop: 'var(--sp-md)', marginBottom: 'var(--sp-md)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                        Milestones
+                    </div>
+                    <div className="stack" style={{ gap: '12px' }}>
+                        {subGoalsWithProgress.map((sg) => (
+                            <div key={sg.id} style={{ fontSize: '0.8rem' }}>
+                                <div className="flex justify-between mb-xs">
+                                    <span>{sg.name}</span>
+                                    <span style={{ color: sg.percent >= 100 ? 'var(--success)' : 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                                        {sg.percent >= 100 ? '✓ ' : ''}£{sg.funded.toLocaleString('en-GB', { maximumFractionDigits: 0 })} <span style={{ opacity: 0.5 }}>/ £{sg.target_amount.toLocaleString('en-GB', { maximumFractionDigits: 0 })}</span>
+                                    </span>
+                                </div>
+                                <div className="progress-track" style={{ height: '6px', background: 'var(--bg-secondary)', borderRadius: '3px', marginTop: '4px' }}>
+                                    <div className="progress-fill" style={{
+                                        width: `${Math.min(sg.percent, 100)}%`,
+                                        background: sg.percent >= 100 ? 'var(--success)' : pot.color,
+                                        borderRadius: '3px',
+                                        transition: 'width 0.5s ease-out'
+                                    }} />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
