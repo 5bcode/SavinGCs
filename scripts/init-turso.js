@@ -25,6 +25,18 @@ async function init() {
     await client.executeMultiple(schema);
     console.log('   ✅ Tables created!');
 
+    // Migration: add goal_date column if missing
+    try {
+        const potCols = await client.execute('PRAGMA table_info(savings_pots)');
+        const hasGoalDate = potCols.rows.some(r => r.name === 'goal_date');
+        if (!hasGoalDate) {
+            await client.execute('ALTER TABLE savings_pots ADD COLUMN goal_date DATE');
+            console.log('   ✅ Migration: added goal_date column');
+        }
+    } catch (e) {
+        console.error('   ⚠️  goal_date migration failed:', e.message);
+    }
+
     // 2. Seed users
     console.log('\n2. Seeding users...');
     const userCount = await client.execute('SELECT COUNT(*) as count FROM users');

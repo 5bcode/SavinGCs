@@ -18,6 +18,7 @@ interface SavingsPot {
     id: number;
     name: string;
     goal_amount: number | null;
+    goal_date: string | null;
     color: string;
     icon: string;
     total_balance: number;
@@ -177,9 +178,29 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
     const progress = pot.goal_amount ? (pot.total_balance / pot.goal_amount) * 100 : 0;
     const clampedProgress = Math.min(progress, 100);
     const isGoalMet = pot.goal_amount && pot.total_balance >= pot.goal_amount;
+    const isUnallocated = pot.name === 'Unallocated';
+
+    // Calculate monthly savings target
+    let monthlySavings: number | null = null;
+    let monthsLeft: number | null = null;
+    if (pot.goal_amount && pot.goal_date && !isGoalMet) {
+        const now = new Date();
+        const target = new Date(pot.goal_date);
+        const remaining = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+        monthsLeft = Math.max(remaining, 0);
+        const amountLeft = pot.goal_amount - pot.total_balance;
+        monthlySavings = monthsLeft > 0 ? amountLeft / monthsLeft : null;
+    }
 
     return (
-        <div className="card" style={{ padding: 'var(--sp-lg)' }}>
+        <div className="card" style={{
+            padding: 'var(--sp-lg)',
+            ...(isUnallocated ? {
+                background: 'rgba(239, 68, 68, 0.06)',
+                borderColor: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+            } : {})
+        }}>
             <div className="flex items-center justify-between mb-md">
                 <div className="flex items-center gap-md">
                     <div className="pot-icon" style={{ background: `${pot.color}25` }}>
@@ -190,6 +211,9 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
                         {pot.goal_amount && (
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
                                 Goal: £{pot.goal_amount.toLocaleString('en-GB')}
+                                {pot.goal_date && (
+                                    <span> · by {new Date(pot.goal_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
+                                )}
                             </div>
                         )}
                     </div>
@@ -216,6 +240,38 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
                         <span>{clampedProgress.toFixed(1)}% complete</span>
                         <span>£{Math.max(0, (pot.goal_amount || 0) - pot.total_balance).toLocaleString('en-GB')} to go</span>
                     </div>
+                    {monthlySavings !== null && monthsLeft !== null && monthsLeft > 0 && (
+                        <div style={{
+                            marginTop: '8px',
+                            padding: '8px 12px',
+                            borderRadius: 'var(--r-md)',
+                            background: 'rgba(124, 58, 237, 0.08)',
+                            border: '1px solid rgba(124, 58, 237, 0.15)',
+                            fontSize: '0.75rem',
+                            color: 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                        }}>
+                            <span style={{ fontSize: '0.9rem' }}>📅</span>
+                            <span>
+                                Save <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--purple-mid)' }}>£{monthlySavings.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/mo</strong> for {monthsLeft} month{monthsLeft !== 1 ? 's' : ''} to hit your goal
+                            </span>
+                        </div>
+                    )}
+                    {monthsLeft !== null && monthsLeft <= 0 && !isGoalMet && (
+                        <div style={{
+                            marginTop: '8px',
+                            padding: '8px 12px',
+                            borderRadius: 'var(--r-md)',
+                            background: 'rgba(239, 68, 68, 0.08)',
+                            border: '1px solid rgba(239, 68, 68, 0.15)',
+                            fontSize: '0.75rem',
+                            color: '#f87171',
+                        }}>
+                            ⏰ Goal date has passed — £{Math.max(0, (pot.goal_amount || 0) - pot.total_balance).toLocaleString('en-GB')} still needed
+                        </div>
+                    )}
                 </div>
             )}
 

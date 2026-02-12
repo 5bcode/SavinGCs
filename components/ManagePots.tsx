@@ -6,6 +6,7 @@ interface SavingsPot {
     id: number;
     name: string;
     goal_amount: number | null;
+    goal_date: string | null;
     color: string;
     icon: string;
 }
@@ -17,7 +18,7 @@ interface ManagePotsProps {
 export default function ManagePots({ onUpdate }: ManagePotsProps) {
     const [pots, setPots] = useState<SavingsPot[]>([]);
     const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState({ name: '', goalAmount: '', color: '#7B2FE0', icon: 'piggy-bank' });
+    const [formData, setFormData] = useState({ name: '', goalAmount: '', goalDate: '', color: '#7B2FE0', icon: 'piggy-bank' });
 
     useEffect(() => { fetchPots(); }, []);
 
@@ -38,13 +39,14 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                 body: JSON.stringify({
                     name: formData.name,
                     goalAmount: formData.goalAmount ? parseFloat(formData.goalAmount.replace(/,/g, '')) : null,
+                    goalDate: formData.goalDate || null,
                     color: formData.color,
                     icon: formData.icon,
                     priority: 0
                 })
             });
             if (!res.ok) throw new Error('Failed to create pot');
-            setFormData({ name: '', goalAmount: '', color: '#7B2FE0', icon: 'piggy-bank' });
+            setFormData({ name: '', goalAmount: '', goalDate: '', color: '#7B2FE0', icon: 'piggy-bank' });
             setShowForm(false);
             fetchPots();
             onUpdate();
@@ -75,6 +77,17 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
         ['savings', '💰'],
         ['tent', '⛺'],
     ];
+
+    /** Calculate monthly savings info for a pot */
+    const getMonthlyInfo = (pot: SavingsPot) => {
+        if (!pot.goal_amount || !pot.goal_date) return null;
+        const now = new Date();
+        const target = new Date(pot.goal_date);
+        const monthsRemaining = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+        if (monthsRemaining <= 0) return { monthsRemaining: 0, perMonth: 0 };
+        // We don't have total_balance in this component's interface but we show it in manage list
+        return { monthsRemaining, targetDate: target };
+    };
 
     return (
         <div>
@@ -113,6 +126,16 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                             placeholder="Optional - e.g., 50,000" />
                     </div>
                     <div className="form-group">
+                        <label className="form-label">Goal Date</label>
+                        <input type="date" className="form-input" value={formData.goalDate}
+                            onChange={(e) => setFormData({ ...formData, goalDate: e.target.value })}
+                            min={new Date().toISOString().split('T')[0]}
+                            style={{ colorScheme: 'dark' }} />
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                            Optional — set a target date to see how much to save per month
+                        </div>
+                    </div>
+                    <div className="form-group">
                         <label className="form-label">Icon</label>
                         <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
                             {iconPairs.map(([key, emoji]) => (
@@ -149,7 +172,10 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                 {pots.map((pot) => {
                     const isUnallocated = pot.name === 'Unallocated';
                     return (
-                        <div key={pot.id} className="pot-item">
+                        <div key={pot.id} className="pot-item" style={isUnallocated ? {
+                            background: 'rgba(239, 68, 68, 0.08)',
+                            borderColor: 'rgba(239, 68, 68, 0.2)',
+                        } : undefined}>
                             <div className="pot-icon" style={{ background: `${pot.color}30`, fontSize: '1.3rem' }}>
                                 {iconPairs.find(([k]) => k === pot.icon)?.[1] || '💰'}
                             </div>
@@ -157,9 +183,13 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                 <div className="pot-name">{pot.name}</div>
                                 {isUnallocated ? (
                                     <div className="pot-meta">Default · Cannot be deleted</div>
-                                ) : pot.goal_amount ? (
-                                    <div className="pot-meta">Goal: £{pot.goal_amount.toLocaleString('en-GB')}</div>
-                                ) : null}
+                                ) : (
+                                    <div className="pot-meta">
+                                        {pot.goal_amount ? `Goal: £${pot.goal_amount.toLocaleString('en-GB')}` : ''}
+                                        {pot.goal_amount && pot.goal_date ? ' · ' : ''}
+                                        {pot.goal_date ? `By ${new Date(pot.goal_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}` : ''}
+                                    </div>
+                                )}
                             </div>
                             {!isUnallocated && (
                                 <button onClick={() => handleDelete(pot.id)} className="icon-btn" style={{ color: 'var(--error)' }}>
