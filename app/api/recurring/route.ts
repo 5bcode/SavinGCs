@@ -1,8 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { dbClient as db } from '@/lib/db_turso';
+import { dbClient as db, ensureInitialized } from '@/lib/db_turso';
 
 export async function GET(req: NextRequest) {
+    await ensureInitialized();
     try {
         const result = await db.execute('SELECT * FROM recurring_transactions ORDER BY next_run_date ASC');
         return NextResponse.json({ recurring: result.rows });

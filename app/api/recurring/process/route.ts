@@ -1,8 +1,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { processRecurringTransactions } from '@/lib/recurring';
+import { ensureInitialized } from '@/lib/db_turso';
 
 export async function POST(req: NextRequest) {
+    await ensureInitialized();
     try {
         const result = await processRecurringTransactions();
         return NextResponse.json(result);
