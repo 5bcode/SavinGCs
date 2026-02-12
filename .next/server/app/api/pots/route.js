@@ -1,7 +1,10 @@
-var R=require("../../../chunks/[turbopack]_runtime.js")("server/app/api/pots/route.js")
-R.c("server/chunks/[root-of-the-server]__f7dc9739._.js")
-R.c("server/chunks/[root-of-the-server]__71a7ca58._.js")
-R.c("server/chunks/[root-of-the-server]__fe3432a3._.js")
-R.c("server/chunks/Desktop_SavinGCs__next-internal_server_app_api_pots_route_actions_274de211.js")
-R.m(46724)
-module.exports=R.m(46724).exports
+"use strict";(()=>{var e={};e.id=303,e.ids=[303],e.modules={399:e=>{e.exports=require("next/dist/compiled/next-server/app-page.runtime.prod.js")},517:e=>{e.exports=require("next/dist/compiled/next-server/app-route.runtime.prod.js")},6113:e=>{e.exports=require("crypto")},1017:e=>{e.exports=require("path")},5606:(e,t,r)=>{r.r(t),r.d(t,{originalPathname:()=>A,patchFetch:()=>g,requestAsyncStorage:()=>d,routeModule:()=>l,serverHooks:()=>x,staticGenerationAsyncStorage:()=>w});var s={};r.r(s),r.d(s,{GET:()=>u,POST:()=>c});var a=r(9303),o=r(8716),n=r(670),i=r(7070),p=r(4677);async function u(){try{let e=await p.wp.execute(`
+            SELECT 
+                sp.*,
+                COALESCE(SUM(a.current_balance), 0) as total_balance
+            FROM savings_pots sp
+            LEFT JOIN accounts a ON a.pot_id = sp.id
+            GROUP BY sp.id
+            ORDER BY sp.priority DESC, sp.created_at ASC
+        `);return i.NextResponse.json({pots:e.rows})}catch(e){return console.error("Error fetching pots:",e),i.NextResponse.json({error:"Failed to fetch pots"},{status:500})}}async function c(e){try{let{name:t,goalAmount:r,color:s,icon:a,priority:o}=await e.json(),n=await p.wp.execute({sql:`INSERT INTO savings_pots (name, goal_amount, color, icon, priority)
+                  VALUES (?, ?, ?, ?, ?) RETURNING id`,args:[t,r||null,s||"#059669",a||"piggy-bank",o||0]}),u=Number(n.lastInsertRowid);return!u&&n.rows.length>0&&(u=Number(n.rows[0].id)),i.NextResponse.json({success:!0,id:u})}catch(e){return console.error("Error creating pot:",e),i.NextResponse.json({error:"Failed to create pot"},{status:500})}}let l=new a.AppRouteRouteModule({definition:{kind:o.x.APP_ROUTE,page:"/api/pots/route",pathname:"/api/pots",filename:"route",bundlePath:"app/api/pots/route"},resolvedPagePath:"C:\\Users\\G\\Desktop\\SavinGCs\\app\\api\\pots\\route.ts",nextConfigOutput:"",userland:s}),{requestAsyncStorage:d,staticGenerationAsyncStorage:w,serverHooks:x}=l,A="/api/pots/route";function g(){return(0,n.patchFetch)({serverHooks:x,staticGenerationAsyncStorage:w})}},4677:(e,t,r)=>{r.d(t,{wp:()=>a});let s=require("@libsql/client");require("fs"),r(1017),r(8691),process.env.DATABASE_URL?.includes("libsql")||process.env.DATABASE_URL?.includes("turso");let a=(0,s.createClient)({url:process.env.DATABASE_URL||"file:savings-tracker.db",authToken:process.env.DATABASE_AUTH_TOKEN});class o{prepare(e){return{get:async(...t)=>(await a.execute({sql:e,args:t})).rows[0],all:async(...t)=>(await a.execute({sql:e,args:t})).rows,run:async(...t)=>{let r=await a.execute({sql:e,args:t});return{lastInsertRowid:r.lastInsertRowid,changes:r.rowsAffected}}}}transaction(e){return async(...t)=>(console.warn("Transactions are not fully supported in async wrapper yet."),e(t))}pragma(e){}exec(e){return a.executeMultiple(e)}}new o}};var t=require("../../../webpack-runtime.js");t.C(e);var r=e=>t(t.s=e),s=t.X(0,[948,972,691],()=>r(5606));module.exports=s})();

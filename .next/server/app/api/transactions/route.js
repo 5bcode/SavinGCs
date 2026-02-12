@@ -1,7 +1,15 @@
-var R=require("../../../chunks/[turbopack]_runtime.js")("server/app/api/transactions/route.js")
-R.c("server/chunks/[root-of-the-server]__c4402019._.js")
-R.c("server/chunks/[root-of-the-server]__71a7ca58._.js")
-R.c("server/chunks/[root-of-the-server]__fe3432a3._.js")
-R.c("server/chunks/3d860_SavinGCs__next-internal_server_app_api_transactions_route_actions_bbc2937a.js")
-R.m(53056)
-module.exports=R.m(53056).exports
+"use strict";(()=>{var e={};e.id=866,e.ids=[866],e.modules={399:e=>{e.exports=require("next/dist/compiled/next-server/app-page.runtime.prod.js")},517:e=>{e.exports=require("next/dist/compiled/next-server/app-route.runtime.prod.js")},6113:e=>{e.exports=require("crypto")},1017:e=>{e.exports=require("path")},8461:(e,t,r)=>{r.r(t),r.d(t,{originalPathname:()=>_,patchFetch:()=>R,requestAsyncStorage:()=>l,routeModule:()=>d,serverHooks:()=>w,staticGenerationAsyncStorage:()=>E});var a={};r.r(a),r.d(a,{GET:()=>u,POST:()=>p});var s=r(9303),n=r(8716),o=r(670),i=r(7070),c=r(4677);async function u(e){try{let{searchParams:t}=new URL(e.url),r=t.get("potId"),a=t.get("accountId"),s=`
+            SELECT 
+                t.*,
+                a.account_name,
+                sp.name as pot_name,
+                u.display_name as user_name
+            FROM transactions t
+            LEFT JOIN accounts a ON a.id = t.account_id
+            LEFT JOIN savings_pots sp ON sp.id = a.pot_id
+            LEFT JOIN users u ON u.id = t.user_id
+            WHERE 1=1
+        `,n=[];r&&(s+=" AND a.pot_id = ?",n.push(r)),a&&(s+=" AND t.account_id = ?",n.push(a)),s+=" ORDER BY t.transaction_date DESC, t.created_at DESC";let o=await c.wp.execute({sql:s,args:n});return i.NextResponse.json({transactions:o.rows})}catch(e){return console.error("Error fetching transactions:",e),i.NextResponse.json({error:"Failed to fetch transactions"},{status:500})}}async function p(e){try{let{accountId:t,userId:r,amount:a,description:s,transactionDate:n}=await e.json(),o=await c.wp.execute({sql:`INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
+                  VALUES (?, ?, ?, ?, ?) RETURNING id`,args:[t,r,a,s||"",n]});await c.wp.execute({sql:`UPDATE accounts 
+                  SET current_balance = current_balance + ?, last_updated = CURRENT_TIMESTAMP
+                  WHERE id = ?`,args:[a,t]});let u=Number(o.lastInsertRowid);return!u&&o.rows.length>0&&(u=Number(o.rows[0].id)),i.NextResponse.json({success:!0,id:u})}catch(e){return console.error("Error creating transaction:",e),i.NextResponse.json({error:"Failed to create transaction"},{status:500})}}let d=new s.AppRouteRouteModule({definition:{kind:n.x.APP_ROUTE,page:"/api/transactions/route",pathname:"/api/transactions",filename:"route",bundlePath:"app/api/transactions/route"},resolvedPagePath:"C:\\Users\\G\\Desktop\\SavinGCs\\app\\api\\transactions\\route.ts",nextConfigOutput:"",userland:a}),{requestAsyncStorage:l,staticGenerationAsyncStorage:E,serverHooks:w}=d,_="/api/transactions/route";function R(){return(0,o.patchFetch)({serverHooks:w,staticGenerationAsyncStorage:E})}},4677:(e,t,r)=>{r.d(t,{wp:()=>s});let a=require("@libsql/client");require("fs"),r(1017),r(8691),process.env.DATABASE_URL?.includes("libsql")||process.env.DATABASE_URL?.includes("turso");let s=(0,a.createClient)({url:process.env.DATABASE_URL||"file:savings-tracker.db",authToken:process.env.DATABASE_AUTH_TOKEN});class n{prepare(e){return{get:async(...t)=>(await s.execute({sql:e,args:t})).rows[0],all:async(...t)=>(await s.execute({sql:e,args:t})).rows,run:async(...t)=>{let r=await s.execute({sql:e,args:t});return{lastInsertRowid:r.lastInsertRowid,changes:r.rowsAffected}}}}transaction(e){return async(...t)=>(console.warn("Transactions are not fully supported in async wrapper yet."),e(t))}pragma(e){}exec(e){return s.executeMultiple(e)}}new n}};var t=require("../../../webpack-runtime.js");t.C(e);var r=e=>t(t.s=e),a=t.X(0,[948,972,691],()=>r(8461));module.exports=a})();

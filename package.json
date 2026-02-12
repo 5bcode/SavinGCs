@@ -9,13 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "better-sqlite3": "^9.4.3",
+    "@libsql/client": "^0.17.0",
+    "bcryptjs": "^3.0.3",
     "next": "14.2.3",
+    "papaparse": "^5.5.3",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.10",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
