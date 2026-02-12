@@ -61,13 +61,25 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
 
             if (!targetAccountId) throw new Error('Please select a target account');
 
+            let finalTargetPotId = targetPotId;
+            let finalTargetAccountId: number | null = parseInt(targetAccountId);
+
+            if (targetAccountId.startsWith('new_')) {
+                finalTargetPotId = targetAccountId.split('_')[1];
+                finalTargetAccountId = null; // API expects null/new for creation
+            } else {
+                // Ensure pot ID is correct for the selected account
+                const acc = accounts.find(a => a.id === parseInt(targetAccountId));
+                if (acc) finalTargetPotId = String(acc.pot_id);
+            }
+
             const res = await fetch('/api/allocate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sourceAccountId: parseInt(sourceAccountId),
-                    targetPotId: parseInt(targetPotId),
-                    targetAccountId: targetAccountId === 'new' ? null : parseInt(targetAccountId),
+                    targetPotId: parseInt(finalTargetPotId),
+                    targetAccountId: finalTargetAccountId,
                     amount: numAmount
                 })
             });
@@ -135,59 +147,37 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                             )}
 
                             <div className="form-group">
-                                <label className="form-label">From Pot</label>
-                                <select
-                                    className="form-select"
-                                    value={sourcePotId}
-                                    onChange={e => {
-                                        setSourcePotId(e.target.value);
-                                        setSourceAccountId('');
-                                    }}
-                                    required
-                                >
-                                    <option value="">Select source pot...</option>
-                                    {pots.map(pot => (
-                                        <option key={pot.id} value={pot.id}>{pot.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="form-group">
                                 <label className="form-label">From Account</label>
                                 <select
                                     className="form-select"
                                     value={sourceAccountId}
-                                    onChange={e => setSourceAccountId(e.target.value)}
-                                    required
-                                    disabled={!sourcePotId}
-                                >
-                                    <option value="">Select source account...</option>
-                                    {filteredSourceAccounts.map(acc => (
-                                        <option key={acc.id} value={acc.id} style={{
-                                            color: acc.owner === 'Gary' ? '#3b82f6' : acc.owner === 'Catherine' ? '#ec4899' : 'inherit',
-                                            fontWeight: 'bold'
-                                        }}>
-                                            {acc.account_name} ({acc.owner}) - £{acc.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">To Pot</label>
-                                <select
-                                    className="form-select"
-                                    value={targetPotId}
                                     onChange={e => {
-                                        setTargetPotId(e.target.value);
-                                        setTargetAccountId('');
+                                        const accId = e.target.value;
+                                        setSourceAccountId(accId);
+                                        // Auto-set pot ID based on selected account
+                                        const acc = accounts.find(a => a.id === parseInt(accId));
+                                        if (acc) setSourcePotId(String(acc.pot_id));
+                                        else setSourcePotId('');
                                     }}
                                     required
                                 >
-                                    <option value="">Select target pot...</option>
-                                    {availableTargetPots.map(pot => (
-                                        <option key={pot.id} value={pot.id}>{pot.name}</option>
-                                    ))}
+                                    <option value="">Select source account...</option>
+                                    {pots.map(pot => {
+                                        const potAccounts = accounts.filter(a => a.pot_id === pot.id && a.current_balance > 0);
+                                        if (potAccounts.length === 0) return null;
+
+                                        return (
+                                            <optgroup key={pot.id} label={pot.name}>
+                                                {potAccounts.map(acc => (
+                                                    <option key={acc.id} value={acc.id} style={{
+                                                        color: acc.owner === 'Gary' ? '#3b82f6' : acc.owner === 'Catherine' ? '#ec4899' : 'inherit',
+                                                    }}>
+                                                        {acc.account_name} ({acc.owner}) — £{acc.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
@@ -196,17 +186,45 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                 <select
                                     className="form-select"
                                     value={targetAccountId}
-                                    onChange={e => setTargetAccountId(e.target.value)}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        setTargetAccountId(val);
+
+                                        if (val && val !== 'new') {
+                                            const acc = accounts.find(a => a.id === parseInt(val));
+                                            if (acc) setTargetPotId(String(acc.pot_id));
+                                        } else if (val === 'new') {
+                                            // Ensure we have a target pot selected... wait, if 'new', we need to know WHICH pot.
+                                            // The previous UI let you select Pot then 'Create New'.
+                                            // If we remove Pot selector, 'Create New' becomes ambiguous: "Create New in WHICH POT?"
+                                            // Solution: Helper generic 'Create New' is tricky without Pot selector.
+                                            // Alternative: Add "Create New in [Pot Name]" options for each pot? 
+                                            // Or: Keep "Target Pot" selector ONLY if "Create New" is picked?
+                                            // Let's try adding "Create New" as the first option inside EACH optgroup?
+                                            // Yes! <option value="new_POTID">+ New in {PotName}</option>
+
+                                            // Actually, let's just default to 'Unallocated' or ask properly? 
+                                            // "Create New" inside optgroups is best UX.
+                                        }
+                                    }}
                                     required
-                                    disabled={!targetPotId}
                                 >
                                     <option value="">Select target account...</option>
-                                    <option value="new">+ Create New Account (Clone Details)</option>
-                                    {filteredTargetAccounts.map(acc => (
-                                        <option key={acc.id} value={acc.id}>
-                                            {acc.account_name} ({acc.owner}) - Current: £{acc.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                                        </option>
-                                    ))}
+                                    {pots.map(pot => {
+                                        const potAccounts = accounts.filter(a => a.pot_id === pot.id);
+                                        return (
+                                            <optgroup key={pot.id} label={pot.name}>
+                                                <option value={`new_${pot.id}`} style={{ fontStyle: 'italic', color: 'var(--teal-mid)' }}>
+                                                    + Create new in {pot.name}...
+                                                </option>
+                                                {potAccounts.map(acc => (
+                                                    <option key={acc.id} value={acc.id}>
+                                                        {acc.account_name} ({acc.owner}) — £{acc.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                                    </option>
+                                                ))}
+                                            </optgroup>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
