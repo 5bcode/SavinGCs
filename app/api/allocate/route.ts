@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     await ensureInitialized();
 
     try {
-        const { sourceAccountId, targetPotId, amount } = await request.json();
+        const { sourceAccountId, targetPotId, targetAccountId, amount } = await request.json();
 
         if (!sourceAccountId || !targetPotId || !amount || amount <= 0) {
             return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
@@ -28,34 +28,58 @@ export async function POST(request: NextRequest) {
         if (currentBalance < amount) throw new Error('Insufficient funds in source account');
 
         // 2. Find or Create Target Account
-        const targetAccountRes = await dbClient.execute({
-            sql: `SELECT * FROM accounts 
-                  WHERE pot_id = ? 
-                  AND account_name = ? 
-                  AND account_type = ? 
-                  AND owner = ?`,
-            args: [targetPotId, source.account_name, source.account_type, source.owner]
-        });
+        let finalTargetId: number | string;
 
-        const targetAccount = targetAccountRes.rows[0];
-        let targetAccountId: number | string;
+        if (targetAccountId) {
+            // Verify target account exists and matches targetPotId
+            const targetAccountRes = await dbClient.execute({
+                sql: 'SELECT * FROM accounts WHERE id = ? AND pot_id = ?',
+                args: [targetAccountId, targetPotId]
+            });
+            const targetAccount = targetAccountRes.rows[0];
+            if (!targetAccount) throw new Error('Target account invalid for this pot');
 
-        if (targetAccount) {
-            targetAccountId = String(targetAccount.id);
+            finalTargetId = targetAccountId;
+
             await dbClient.execute({
                 sql: `UPDATE accounts 
                       SET current_balance = current_balance + ?, last_updated = CURRENT_TIMESTAMP 
                       WHERE id = ?`,
-                args: [amount, targetAccountId]
+                args: [amount, finalTargetId]
             });
         } else {
-            const insertRes = await dbClient.execute({
-                sql: `INSERT INTO accounts (pot_id, account_name, account_type, owner, current_balance, last_updated)
-                      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
-                args: [targetPotId, source.account_name, source.account_type, source.owner, amount]
+            // Fallback: Find by matching details or Create New
+            const valName = source.account_name;
+            const valType = source.account_type;
+            const valOwner = source.owner;
+
+            const existingTargetRes = await dbClient.execute({
+                sql: `SELECT * FROM accounts 
+                      WHERE pot_id = ? 
+                      AND account_name = ? 
+                      AND account_type = ? 
+                      AND owner = ?`,
+                args: [targetPotId, valName, valType, valOwner]
             });
 
-            targetAccountId = String(insertRes.lastInsertRowid || (insertRes.rows[0]?.id));
+            const existingTarget = existingTargetRes.rows[0];
+
+            if (existingTarget) {
+                finalTargetId = String(existingTarget.id);
+                await dbClient.execute({
+                    sql: `UPDATE accounts 
+                          SET current_balance = current_balance + ?, last_updated = CURRENT_TIMESTAMP 
+                          WHERE id = ?`,
+                    args: [amount, finalTargetId]
+                });
+            } else {
+                const insertRes = await dbClient.execute({
+                    sql: `INSERT INTO accounts (pot_id, account_name, account_type, owner, current_balance, last_updated)
+                          VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
+                    args: [targetPotId, valName, valType, valOwner, amount]
+                });
+                finalTargetId = String(insertRes.lastInsertRowid || insertRes.rows[0]?.id);
+            }
         }
 
         // 3. Update Source Account

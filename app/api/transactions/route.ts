@@ -83,17 +83,17 @@ export async function POST(request: NextRequest) {
 
         // Check for milestones (only for positive amounts/deposits)
         if (amount > 0) {
-            // Get updated balance after transaction
-            const updatedAccountResult = await dbClient.execute({
-                sql: `SELECT current_balance FROM accounts WHERE id = ?`,
-                args: [accountId]
+            // Get updated POT TOTAL balance after transaction (sum of all accounts in pot)
+            const updatedPotResult = await dbClient.execute({
+                sql: `SELECT SUM(current_balance) as total FROM accounts WHERE pot_id = ?`,
+                args: [account.pot_id]
             });
-            const updatedBalance = Number(updatedAccountResult.rows[0]?.current_balance || 0);
+            const updatedPotBalance = Number(updatedPotResult.rows[0]?.total || 0);
 
             // Check and create milestones
             const notifications = await checkAndCreateMilestones(
                 Number(account.pot_id),
-                updatedBalance,
+                updatedPotBalance,
                 account.goal_amount ? Number(account.goal_amount) : null,
                 userId
             );

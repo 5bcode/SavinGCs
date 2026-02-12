@@ -29,15 +29,13 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
     const [sourcePotId, setSourcePotId] = useState<string>('');
     const [sourceAccountId, setSourceAccountId] = useState<string>('');
     const [targetPotId, setTargetPotId] = useState<string>('');
+    const [targetAccountId, setTargetAccountId] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     // Initialize sourcePotId to Unallocated if available, but allow changing it
     const unallocatedPot = pots.find(p => p.name === 'Unallocated');
-
-    // Effect to set default source pot only on open, avoiding resets
-    // We'll handle defaults in the render logic or state init if needed
 
     // Filter source accounts based on selected source pot
     const filteredSourceAccounts = sourcePotId
@@ -46,6 +44,11 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
 
     // Filter target pots (exclude selected source pot)
     const availableTargetPots = pots.filter(p => String(p.id) !== sourcePotId);
+
+    // Filter target accounts based on selected target pot
+    const filteredTargetAccounts = targetPotId
+        ? accounts.filter(a => a.pot_id === parseInt(targetPotId))
+        : [];
 
     const handleAllocate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,12 +59,15 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
             const numAmount = parseFloat(amount.replace(/,/g, ''));
             if (isNaN(numAmount) || numAmount <= 0) throw new Error('Invalid amount');
 
+            if (!targetAccountId) throw new Error('Please select a target account');
+
             const res = await fetch('/api/allocate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     sourceAccountId: parseInt(sourceAccountId),
                     targetPotId: parseInt(targetPotId),
+                    targetAccountId: targetAccountId === 'new' ? null : parseInt(targetAccountId),
                     amount: numAmount
                 })
             });
@@ -73,6 +79,8 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
 
             setAmount('');
             setShowModal(false);
+            setTargetPotId('');
+            setTargetAccountId('');
             onUpdate();
         } catch (err: any) {
             setError(err.message);
@@ -85,17 +93,12 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
         ? accounts.find(a => a.id === parseInt(sourceAccountId))?.current_balance || 0
         : 0;
 
-    // Reset selections when modal opens/closes or just rely on state
-    // We might want to clear amounts when switching accounts
-
-
     return (
         <>
             <button
                 className="btn btn-secondary" style={{ width: '100%' }}
                 onClick={() => {
                     setShowModal(true);
-                    // Default to Unallocated if not set
                     if (!sourcePotId && unallocatedPot) setSourcePotId(String(unallocatedPot.id));
                 }}
             >
@@ -138,7 +141,7 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                     value={sourcePotId}
                                     onChange={e => {
                                         setSourcePotId(e.target.value);
-                                        setSourceAccountId(''); // Reset account when pot changes
+                                        setSourceAccountId('');
                                     }}
                                     required
                                 >
@@ -175,12 +178,34 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                 <select
                                     className="form-select"
                                     value={targetPotId}
-                                    onChange={e => setTargetPotId(e.target.value)}
+                                    onChange={e => {
+                                        setTargetPotId(e.target.value);
+                                        setTargetAccountId('');
+                                    }}
                                     required
                                 >
                                     <option value="">Select target pot...</option>
                                     {availableTargetPots.map(pot => (
                                         <option key={pot.id} value={pot.id}>{pot.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">To Account</label>
+                                <select
+                                    className="form-select"
+                                    value={targetAccountId}
+                                    onChange={e => setTargetAccountId(e.target.value)}
+                                    required
+                                    disabled={!targetPotId}
+                                >
+                                    <option value="">Select target account...</option>
+                                    <option value="new">+ Create New Account (Clone Details)</option>
+                                    {filteredTargetAccounts.map(acc => (
+                                        <option key={acc.id} value={acc.id}>
+                                            {acc.account_name} ({acc.owner}) - Current: £{acc.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                        </option>
                                     ))}
                                 </select>
                             </div>
@@ -208,7 +233,7 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                         }}
                                         placeholder="0.00"
                                         required
-                                        style={{ paddingRight: '60px' }} // Make room for Max button
+                                        style={{ paddingRight: '60px' }}
                                     />
                                     {maxAmount > 0 && (
                                         <button

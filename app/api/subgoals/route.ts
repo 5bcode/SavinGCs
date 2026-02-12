@@ -51,3 +51,28 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to delete sub-goal' }, { status: 500 });
     }
 }
+
+export async function PUT(request: NextRequest) {
+    const user = getSessionUser(request);
+    if (!user) return unauthorizedResponse();
+
+    await ensureInitialized();
+
+    try {
+        const { id, name, targetAmount } = await request.json();
+
+        if (!id || !name || targetAmount === undefined) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        await dbClient.execute({
+            sql: `UPDATE sub_goals SET name = ?, target_amount = ? WHERE id = ?`,
+            args: [name, targetAmount, id]
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error updating sub-goal:', error);
+        return NextResponse.json({ error: 'Failed to update sub-goal' }, { status: 500 });
+    }
+}

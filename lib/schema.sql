@@ -19,6 +19,16 @@ CREATE TABLE IF NOT EXISTS savings_pots (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Sub-goals for breaking down large pot goals
+CREATE TABLE IF NOT EXISTS sub_goals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pot_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    target_amount REAL NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pot_id) REFERENCES savings_pots (id) ON DELETE CASCADE
+);
+
 -- Individual accounts within pots
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,7 +87,7 @@ CREATE TABLE IF NOT EXISTS milestones (
     milestone_value REAL NOT NULL,
     achieved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pot_id) REFERENCES savings_pots (id) ON DELETE CASCADE,
-    UNIQUE(pot_id, milestone_type)
+    UNIQUE (pot_id, milestone_type)
 );
 
 -- In-app notifications
@@ -108,8 +118,11 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 
 -- Indexes for notifications
 CREATE INDEX IF NOT EXISTS idx_milestones_pot ON milestones (pot_id);
+
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id);
+
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications (user_id, is_read);
+
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions (user_id);
 
 -- ============================================================

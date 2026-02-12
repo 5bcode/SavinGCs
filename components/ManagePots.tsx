@@ -148,12 +148,21 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                 });
             }
 
-            // Note: Updates to existing sub-goals are effectively deletes/adds if we don't have PUT. 
-            // But here we didn't implement PUT sub-goals. So modifying an existing sub-goal in the UI needs to be handled.
-            // For now, let's assume users delete and re-add if they want to change amount, or we handle simple text updates?
-            // Actually, if we just want to support "Add Sub-goals", maybe we don't support editing them yet?
-            // User requested "implement sub-goals", implies creating them.
-            // I'll stick to Add/Delete for simplicity in this iteration.
+            // Identify updates
+            const toUpdate = newSubGoals.filter(nsg => nsg.id && originalSubGoals.find(osg => osg.id === nsg.id));
+            for (const sg of toUpdate) {
+                await fetch('/api/subgoals', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: sg.id,
+                        name: sg.name,
+                        targetAmount: parseFloat(sg.targetAmount.replace(/,/g, ''))
+                    })
+                });
+            }
+
+
 
             setEditingPotId(null);
             refresh();
@@ -325,7 +334,10 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                 onChange={(e) => setEditData({ ...editData, goalAmount: e.target.value })}
                                                 onFocus={() => stripCommasOnFocus(editData.goalAmount, (v) => setEditData({ ...editData, goalAmount: v }))}
                                                 onBlur={() => formatAmountOnBlur(editData.goalAmount, (v) => setEditData({ ...editData, goalAmount: v }))}
-                                                placeholder="e.g., 50,000" />
+                                                placeholder="e.g., 50,000"
+                                                disabled={editData.subGoals.length > 0}
+                                                title={editData.subGoals.length > 0 ? "Calculated from sub-goals" : "Enter goal amount"}
+                                            />
                                         </div>
                                         <div className="form-group">
                                             <label className="form-label">Goal Date</label>
@@ -340,12 +352,58 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                         <div className="stack gap-sm mb-sm">
                                             {editData.subGoals.map((sg, idx) => (
                                                 <div key={idx} className="flex gap-sm items-center">
-                                                    <input type="text" className="form-input" value={sg.name} disabled style={{ flex: 2, fontSize: '0.85rem' }} />
-                                                    <input type="text" className="form-input" value={`£${sg.targetAmount}`} disabled style={{ flex: 1, fontSize: '0.85rem' }} />
+                                                    <input type="text" className="form-input" value={sg.name}
+                                                        style={{ flex: 2, fontSize: '0.85rem' }}
+                                                        onChange={(e) => {
+                                                            const newSubGoals = [...editData.subGoals];
+                                                            newSubGoals[idx].name = e.target.value;
+                                                            setEditData({ ...editData, subGoals: newSubGoals });
+                                                        }}
+                                                    />
+                                                    <input type="text" className="form-input" value={sg.targetAmount} // stored as formatted string
+                                                        style={{ flex: 1, fontSize: '0.85rem' }}
+                                                        onChange={(e) => {
+                                                            // Allow typing, strip commas for calculation later
+                                                            const newSubGoals = [...editData.subGoals];
+                                                            newSubGoals[idx].targetAmount = e.target.value;
+
+                                                            // Recalculate Total Goal
+                                                            const total = newSubGoals.reduce((sum, s) => {
+                                                                const val = parseFloat(s.targetAmount.replace(/,/g, ''));
+                                                                return sum + (isNaN(val) ? 0 : val);
+                                                            }, 0);
+
+                                                            setEditData({
+                                                                ...editData,
+                                                                subGoals: newSubGoals,
+                                                                goalAmount: total.toLocaleString('en-GB', { maximumFractionDigits: 2 })
+                                                            });
+                                                        }}
+                                                        onBlur={() => {
+                                                            const newSubGoals = [...editData.subGoals];
+                                                            const raw = newSubGoals[idx].targetAmount.replace(/,/g, '');
+                                                            const val = parseFloat(raw);
+                                                            if (!isNaN(val)) {
+                                                                newSubGoals[idx].targetAmount = val.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+                                                                setEditData(prev => ({ ...prev, subGoals: newSubGoals }));
+                                                            }
+                                                        }}
+                                                    />
                                                     <button type="button" className="icon-btn" onClick={() => {
                                                         const newSubGoals = [...editData.subGoals];
                                                         newSubGoals.splice(idx, 1);
-                                                        setEditData({ ...editData, subGoals: newSubGoals });
+
+                                                        // Recalculate Total Goal after delete
+                                                        const total = newSubGoals.reduce((sum, s) => {
+                                                            const val = parseFloat(s.targetAmount.replace(/,/g, ''));
+                                                            return sum + (isNaN(val) ? 0 : val);
+                                                        }, 0);
+
+                                                        setEditData({
+                                                            ...editData,
+                                                            subGoals: newSubGoals,
+                                                            goalAmount: total > 0 ? total.toLocaleString('en-GB', { maximumFractionDigits: 2 }) : ''
+                                                        });
                                                     }} style={{ color: 'var(--error)' }}>
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -379,7 +437,8 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                                     subGoals: [...editData.subGoals, {
                                                                         name: nameInput.value,
                                                                         targetAmount: amt.toLocaleString('en-GB', { maximumFractionDigits: 2 })
-                                                                    }]
+                                                                    }],
+                                                                    goalAmount: (editData.subGoals.reduce((sum, sg) => sum + parseFloat(sg.targetAmount.replace(/,/g, '')), 0) + amt).toLocaleString('en-GB', { maximumFractionDigits: 2 })
                                                                 });
                                                                 nameInput.value = '';
                                                                 amtInput.value = '';
@@ -395,12 +454,21 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                 if (nameInput.value && amtInput.value) {
                                                     const amt = parseFloat(amtInput.value.replace(/,/g, ''));
                                                     if (!isNaN(amt)) {
+                                                        // Add new sub-goal and update total goal
+                                                        const newSubGoals = [...editData.subGoals, {
+                                                            name: nameInput.value,
+                                                            targetAmount: amt.toLocaleString('en-GB', { maximumFractionDigits: 2 })
+                                                        }];
+
+                                                        const total = newSubGoals.reduce((sum, s) => {
+                                                            const val = parseFloat(s.targetAmount.replace(/,/g, ''));
+                                                            return sum + (isNaN(val) ? 0 : val);
+                                                        }, 0);
+
                                                         setEditData({
                                                             ...editData,
-                                                            subGoals: [...editData.subGoals, {
-                                                                name: nameInput.value,
-                                                                targetAmount: amt.toLocaleString('en-GB', { maximumFractionDigits: 2 })
-                                                            }]
+                                                            subGoals: newSubGoals,
+                                                            goalAmount: total.toLocaleString('en-GB', { maximumFractionDigits: 2 })
                                                         });
                                                         nameInput.value = '';
                                                         amtInput.value = '';
@@ -413,7 +481,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                         </div>
                                         {editData.subGoals.length > 0 && (
                                             <div style={{ marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                                                Total sub-goals: £{editData.subGoals.reduce((sum, sg) => sum + parseFloat(sg.targetAmount.replace(/,/g, '')), 0).toLocaleString('en-GB')}
+                                                Total sub-goals: £{editData.goalAmount || '0.00'}
                                             </div>
                                         )}
                                     </div>
