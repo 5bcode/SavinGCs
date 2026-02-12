@@ -15,6 +15,13 @@ interface Account {
     provider?: string;
 }
 
+interface SubGoal {
+    id: number;
+    pot_id: number;
+    name: string;
+    target_amount: number;
+}
+
 interface SavingsPot {
     id: number;
     name: string;
@@ -23,6 +30,7 @@ interface SavingsPot {
     color: string;
     icon: string;
     total_balance: number;
+    sub_goals?: SubGoal[];
 }
 
 interface DashboardProps {

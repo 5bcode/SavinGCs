@@ -25,7 +25,19 @@ interface ManagePotsProps {
     onUpdate: () => void;
 }
 
-// ... iconPairs ...
+const iconPairs: [string, string][] = [
+    ['house', '🏡'],
+    ['piggy-bank', '🐷'],
+    ['car', '🚗'],
+    ['vacation', '🏖️'],
+    ['emergency', '🚨'],
+    ['wedding', '💍'],
+    ['education', '🎓'],
+    ['savings', '💰'],
+    ['tent', '⛺'],
+];
+
+const colorOptions = ['#7B2FE0', '#059669', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#8b5cf6'];
 
 export default function ManagePots({ onUpdate }: ManagePotsProps) {
     const { pots, refresh } = useSavingsData();
@@ -42,7 +54,31 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
     }>({ name: '', goalAmount: '', goalDate: '', color: '#7B2FE0', icon: 'piggy-bank', subGoals: [] });
     const [saving, setSaving] = useState(false);
 
-    // ... handleSubmit ...
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const res = await fetch('/api/pots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    goalAmount: formData.goalAmount ? parseFloat(formData.goalAmount.replace(/,/g, '')) : null,
+                    goalDate: formData.goalDate || null,
+                    color: formData.color,
+                    icon: formData.icon,
+                    priority: 0
+                })
+            });
+            if (!res.ok) throw new Error('Failed to create pot');
+            setFormData({ name: '', goalAmount: '', goalDate: '', color: '#7B2FE0', icon: 'piggy-bank' });
+            setShowForm(false);
+            refresh();
+            onUpdate();
+        } catch (error) {
+            console.error('Error creating pot:', error);
+            alert('Failed to create savings pot');
+        }
+    };
 
     const startEditing = (pot: SavingsPot) => {
         setEditingPotId(pot.id);
@@ -61,7 +97,9 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
         });
     };
 
-    // ... cancelEditing ...
+    const cancelEditing = () => {
+        setEditingPotId(null);
+    };
 
     const handleEditSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -295,6 +333,89 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                 onChange={(e) => setEditData({ ...editData, goalDate: e.target.value })}
                                                 style={{ colorScheme: 'dark' }} />
                                         </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Sub-goals (Breakdown)</label>
+                                        <div className="stack gap-sm mb-sm">
+                                            {editData.subGoals.map((sg, idx) => (
+                                                <div key={idx} className="flex gap-sm items-center">
+                                                    <input type="text" className="form-input" value={sg.name} disabled style={{ flex: 2, fontSize: '0.85rem' }} />
+                                                    <input type="text" className="form-input" value={`£${sg.targetAmount}`} disabled style={{ flex: 1, fontSize: '0.85rem' }} />
+                                                    <button type="button" className="icon-btn" onClick={() => {
+                                                        const newSubGoals = [...editData.subGoals];
+                                                        newSubGoals.splice(idx, 1);
+                                                        setEditData({ ...editData, subGoals: newSubGoals });
+                                                    }} style={{ color: 'var(--error)' }}>
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex gap-sm items-center">
+                                            <input type="text" className="form-input" placeholder="Name (e.g. Deposit)"
+                                                id={`new-sg-name-${editingPotId}`}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        document.getElementById(`new-sg-amt-${editingPotId}`)?.focus();
+                                                    }
+                                                }}
+                                            />
+                                            <input type="text" className="form-input" placeholder="Amount"
+                                                id={`new-sg-amt-${editingPotId}`}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        const nameInput = document.getElementById(`new-sg-name-${editingPotId}`) as HTMLInputElement;
+                                                        const amtInput = document.getElementById(`new-sg-amt-${editingPotId}`) as HTMLInputElement;
+                                                        if (nameInput.value && amtInput.value) {
+                                                            const amt = parseFloat(amtInput.value.replace(/,/g, ''));
+                                                            if (!isNaN(amt)) {
+                                                                setEditData({
+                                                                    ...editData,
+                                                                    subGoals: [...editData.subGoals, {
+                                                                        name: nameInput.value,
+                                                                        targetAmount: amt.toLocaleString('en-GB', { maximumFractionDigits: 2 })
+                                                                    }]
+                                                                });
+                                                                nameInput.value = '';
+                                                                amtInput.value = '';
+                                                                nameInput.focus();
+                                                            }
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <button type="button" className="btn btn-secondary" style={{ minHeight: '38px' }} onClick={() => {
+                                                const nameInput = document.getElementById(`new-sg-name-${editingPotId}`) as HTMLInputElement;
+                                                const amtInput = document.getElementById(`new-sg-amt-${editingPotId}`) as HTMLInputElement;
+                                                if (nameInput.value && amtInput.value) {
+                                                    const amt = parseFloat(amtInput.value.replace(/,/g, ''));
+                                                    if (!isNaN(amt)) {
+                                                        setEditData({
+                                                            ...editData,
+                                                            subGoals: [...editData.subGoals, {
+                                                                name: nameInput.value,
+                                                                targetAmount: amt.toLocaleString('en-GB', { maximumFractionDigits: 2 })
+                                                            }]
+                                                        });
+                                                        nameInput.value = '';
+                                                        amtInput.value = '';
+                                                        nameInput.focus();
+                                                    } else {
+                                                        alert('Invalid amount');
+                                                    }
+                                                }
+                                            }}>+</button>
+                                        </div>
+                                        {editData.subGoals.length > 0 && (
+                                            <div style={{ marginTop: '8px', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
+                                                Total sub-goals: £{editData.subGoals.reduce((sum, sg) => sum + parseFloat(sg.targetAmount.replace(/,/g, '')), 0).toLocaleString('en-GB')}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="form-group">
