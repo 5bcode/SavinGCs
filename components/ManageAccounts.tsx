@@ -129,14 +129,46 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
         savings: 'Savings', isa: 'ISA', current: 'Current', investment: 'Investment', other: 'Other'
     };
 
+    const [viewMode, setViewMode] = useState<'pot' | 'owner'>('pot');
     const [showEmpty, setShowEmpty] = useState(false);
 
-    // Group by pot - Filter based on showEmpty toggle
-    const grouped: Record<string, { color: string; accounts: Account[] }> = {};
+    // Load preferences from localStorage on mount
+    useEffect(() => {
+        const savedViewMode = localStorage.getItem('manageAccounts_viewMode');
+        const savedShowEmpty = localStorage.getItem('manageAccounts_showEmpty');
+
+        if (savedViewMode === 'owner' || savedViewMode === 'pot') {
+            setViewMode(savedViewMode);
+        }
+        if (savedShowEmpty !== null) {
+            setShowEmpty(savedShowEmpty === 'true');
+        }
+    }, []);
+
+    // Save preferences when they change
+    useEffect(() => {
+        localStorage.setItem('manageAccounts_viewMode', viewMode);
+    }, [viewMode]);
+
+    useEffect(() => {
+        localStorage.setItem('manageAccounts_showEmpty', String(showEmpty));
+    }, [showEmpty]);
+
+    // Grouping Logic
+    const groupedByPot: Record<string, { color: string; accounts: Account[] }> = {};
+    const groupedByOwner: Record<string, Account[]> = {};
+
     accounts.forEach((acc) => {
         if (!showEmpty && acc.current_balance === 0) return;
-        if (!grouped[acc.pot_name]) grouped[acc.pot_name] = { color: acc.pot_color, accounts: [] };
-        grouped[acc.pot_name].accounts.push(acc);
+
+        // Group by Pot
+        if (!groupedByPot[acc.pot_name]) groupedByPot[acc.pot_name] = { color: acc.pot_color, accounts: [] };
+        groupedByPot[acc.pot_name].accounts.push(acc);
+
+        // Group by Owner
+        const owner = acc.owner || 'Unassigned';
+        if (!groupedByOwner[owner]) groupedByOwner[owner] = [];
+        groupedByOwner[owner].push(acc);
     });
 
     // Get unique existing providers for dropdown
@@ -155,9 +187,41 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--sp-lg)' }}>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', margin: 0 }}>
-                    All your bank accounts, grouped by pot.
-                </p>
+                <div className="flex gap-sm bg-secondary p-1 rounded-md" style={{ background: 'var(--bg-secondary)', padding: '4px', borderRadius: 'var(--r-md)' }}>
+                    <button
+                        onClick={() => setViewMode('pot')}
+                        className={viewMode === 'pot' ? 'btn-pill-active' : 'btn-pill'}
+                        style={{
+                            fontSize: '0.75rem',
+                            padding: '4px 12px',
+                            background: viewMode === 'pot' ? 'var(--purple-mid)' : 'transparent',
+                            color: viewMode === 'pot' ? 'white' : 'var(--text-secondary)',
+                            border: 'none',
+                            borderRadius: 'var(--r-sm)',
+                            cursor: 'pointer',
+                            fontWeight: 600
+                        }}
+                    >
+                        By Pot
+                    </button>
+                    <button
+                        onClick={() => setViewMode('owner')}
+                        className={viewMode === 'owner' ? 'btn-pill-active' : 'btn-pill'}
+                        style={{
+                            fontSize: '0.75rem',
+                            padding: '4px 12px',
+                            background: viewMode === 'owner' ? 'var(--purple-mid)' : 'transparent',
+                            color: viewMode === 'owner' ? 'white' : 'var(--text-secondary)',
+                            border: 'none',
+                            borderRadius: 'var(--r-sm)',
+                            cursor: 'pointer',
+                            fontWeight: 600
+                        }}
+                    >
+                        By Owner
+                    </button>
+                </div>
+
                 <button
                     onClick={() => setShowEmpty(!showEmpty)}
                     className="btn-pill"
@@ -261,78 +325,137 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                 </form>
             )}
 
-            {Object.keys(grouped).length === 0 && !showForm && (
+            {Object.keys(viewMode === 'pot' ? groupedByPot : groupedByOwner).length === 0 && !showForm && (
                 <div className="empty-state">
                     <div className="empty-state-icon">🏦</div>
                     <div className="empty-state-text">No accounts yet.<br />Add your first bank account above!</div>
                 </div>
             )}
 
-            {Object.entries(grouped).map(([potName, group]) => {
-                const potTotal = group.accounts.reduce((sum, a) => sum + a.current_balance, 0);
-                return (
-                    <div key={potName} style={{ marginBottom: 'var(--sp-xl)' }}>
-                        <div className="flex justify-between items-center" style={{ marginBottom: 'var(--sp-sm)', padding: '0 2px' }}>
-                            <div className="flex items-center gap-sm">
-                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: group.color }} />
-                                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                                    {potName}
+            {viewMode === 'pot' ? (
+                // Group by Pot View
+                Object.entries(groupedByPot).map(([potName, group]) => {
+                    const potTotal = group.accounts.reduce((sum, a) => sum + a.current_balance, 0);
+                    return (
+                        <div key={potName} style={{ marginBottom: 'var(--sp-xl)' }}>
+                            <div className="flex justify-between items-center" style={{ marginBottom: 'var(--sp-sm)', padding: '0 2px' }}>
+                                <div className="flex items-center gap-sm">
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: group.color }} />
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                        {potName}
+                                    </span>
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                    £{potTotal.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                                 </span>
                             </div>
-                            <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                £{potTotal.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                            </span>
+                            <div className="stack" style={{ gap: 'var(--sp-xs)' }}>
+                                {group.accounts.map((account) => (
+                                    <AccountRow
+                                        key={account.id}
+                                        account={account}
+                                        onClick={() => onAccountClick(account.id)}
+                                        onDelete={() => handleDelete(account.id)}
+                                        typeLabels={typeLabels}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                        <div className="stack" style={{ gap: 'var(--sp-xs)' }}>
-                            {group.accounts.map((account) => (
-                                <div key={account.id} className="pot-item" onClick={() => onAccountClick(account.id)}>
-                                    <div className="pot-icon" style={{
-                                        background: `linear-gradient(135deg, ${account.pot_color}30, ${account.pot_color}10)`,
-                                        fontSize: '1rem',
+                    );
+                })
+            ) : (
+                // Group by Owner View
+                Object.entries(groupedByOwner).sort(([a], [b]) => a.localeCompare(b)).map(([owner, accounts]) => {
+                    const ownerTotal = accounts.reduce((sum, a) => sum + a.current_balance, 0);
+                    return (
+                        <div key={owner} style={{ marginBottom: 'var(--sp-xl)' }}>
+                            <div className="flex justify-between items-center" style={{ marginBottom: 'var(--sp-sm)', padding: '0 2px' }}>
+                                <div className="flex items-center gap-sm">
+                                    <span style={{
+                                        fontSize: '0.9rem',
+                                        fontWeight: 700,
+                                        color: owner === 'Gary' ? '#3b82f6' : owner === 'Catherine' ? '#ec4899' : 'var(--text-secondary)'
                                     }}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={account.pot_color || 'var(--purple-mid)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-                                            <line x1="1" y1="10" x2="23" y2="10" />
-                                        </svg>
-                                    </div>
-                                    <div className="pot-info">
-                                        <div className="pot-name">
-                                            {account.provider ? (
-                                                <>
-                                                    <span style={{ fontWeight: 'normal', opacity: 0.8 }}>{account.provider} – </span>
-                                                    {account.account_name}
-                                                </>
-                                            ) : (
-                                                account.account_name
-                                            )}
-                                        </div>
-                                        <div className="pot-meta">
-                                            {typeLabels[account.account_type] || account.account_type} ·
-                                            <span style={{
-                                                color: account.owner === 'Gary' ? '#3b82f6' : account.owner === 'Catherine' ? '#ec4899' : 'inherit',
-                                                fontWeight: 600,
-                                                marginLeft: '4px'
-                                            }}>
-                                                {account.owner || 'Joint'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-sm">
-                                        <div className="pot-amount">
-                                            £{account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
-                                        </div>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(account.id); }} className="icon-btn" style={{ color: 'var(--error)', width: '32px', height: '32px' }}>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                                            </svg>
-                                        </button>
-                                    </div>
+                                        {owner}
+                                    </span>
                                 </div>
-                            ))}
+                                <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-tertiary)' }}>
+                                    £{ownerTotal.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                            <div className="stack" style={{ gap: 'var(--sp-xs)' }}>
+                                {accounts.map((account) => (
+                                    <AccountRow
+                                        key={account.id}
+                                        account={account}
+                                        onClick={() => onAccountClick(account.id)}
+                                        onDelete={() => handleDelete(account.id)}
+                                        typeLabels={typeLabels}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })
+            )}
+        </div>
+    );
+}
+
+function AccountRow({ account, onClick, onDelete, typeLabels }: {
+    account: Account;
+    onClick: () => void;
+    onDelete: () => void;
+    typeLabels: Record<string, string>;
+}) {
+    return (
+        <div className="pot-item" onClick={onClick}>
+            <div className="pot-icon" style={{
+                background: `linear-gradient(135deg, ${account.pot_color}30, ${account.pot_color}10)`,
+                fontSize: '1rem',
+            }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={account.pot_color || 'var(--purple-mid)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                    <line x1="1" y1="10" x2="23" y2="10" />
+                </svg>
+            </div>
+            <div className="pot-info">
+                <div className="pot-name">
+                    {account.provider ? (
+                        <>
+                            <span style={{ fontWeight: 'normal', opacity: 0.8 }}>{account.provider} – </span>
+                            {account.account_name}
+                        </>
+                    ) : (
+                        account.account_name
+                    )}
+                </div>
+                <div className="pot-meta">
+                    {typeLabels[account.account_type] || account.account_type} ·
+                    <span style={{
+                        color: account.owner === 'Gary' ? '#3b82f6' : account.owner === 'Catherine' ? '#ec4899' : 'inherit',
+                        fontWeight: 600,
+                        marginLeft: '4px'
+                    }}>
+                        {account.owner || 'Joint'}
+                    </span>
+                    {/* Only show Pot Name if we are in Owner view - wait, we reuse this row. Let's just always show it? Or distinct?
+                        Actually in Pot view, Pot name is header. In Owner view, Pot name is useful.
+                        Let's add it if it's not redundant.
+                    */}
+                    · <span style={{ opacity: 0.8 }}>{account.pot_name}</span>
+                </div>
+            </div>
+            <div className="flex items-center gap-sm">
+                <div className="pot-amount">
+                    £{account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="icon-btn" style={{ color: 'var(--error)', width: '32px', height: '32px' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
         </div>
     );
 }
