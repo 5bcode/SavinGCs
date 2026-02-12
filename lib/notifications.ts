@@ -1,5 +1,19 @@
 // Notification service for milestones and push notifications
 import { dbClient, ensureInitialized } from './db_turso';
+import webpush from 'web-push';
+
+// Configure VAPID keys
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@example.com';
+
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    VAPID_SUBJECT,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+  );
+}
 
 export interface Milestone {
   id?: number;
@@ -288,7 +302,6 @@ export async function getPushSubscriptions(userId: number): Promise<PushSubscrip
 
 /**
  * Send a push notification to all user's devices
- * Note: This is a placeholder - actual push requires web-push library and VAPID keys
  */
 async function sendPushNotification(
   userId: number,
@@ -303,8 +316,43 @@ async function sendPushNotification(
     return;
   }
 
-  // Store notification for later retrieval
-  // Actual push sending would require the web-push library and VAPID keys
-  // This would be implemented in the API route
-  console.log(`[Push Notification] ${title}: ${body} (User: ${userId})`);
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    console.warn('[Push Notification] VAPID keys not configured. Skipping push.');
+    return;
+  }
+
+  const payload = JSON.stringify({
+    title,
+    body,
+    data: {
+      ...data,
+      url: '/' // Default to root, can be expanded later
+    }
+  });
+
+  // Send push to each subscription
+  const pushPromises = subscriptions.map(async (sub) => {
+    try {
+      const pushSub = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth
+        }
+      };
+
+      await webpush.sendNotification(pushSub, payload);
+    } catch (error: any) {
+      // If subscription has expired or is invalid, remove it from the database
+      if (error.statusCode === 404 || error.statusCode === 410) {
+        console.log(`[Push Notification] Removing expired subscription for user ${userId}: ${sub.endpoint}`);
+        await deletePushSubscription(sub.endpoint);
+      } else {
+        console.error(`[Push Notification] Error sending to ${sub.endpoint}:`, error);
+      }
+    }
+  });
+
+  await Promise.all(pushPromises);
+  console.log(`[Push Notification] Attempted sending to ${subscriptions.length} devices (User: ${userId})`);
 }
