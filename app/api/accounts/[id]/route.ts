@@ -60,7 +60,7 @@ export async function PATCH(
     await ensureInitialized();
 
     try {
-        const { accountName, accountType, owner, currentBalance } = await request.json();
+        const { accountName, accountType, owner, provider } = await request.json();
 
         const existingRes = await dbClient.execute({
             sql: 'SELECT * FROM accounts WHERE id = ?',
@@ -75,12 +75,13 @@ export async function PATCH(
         const newName = accountName ?? existing.account_name;
         const newType = accountType ?? existing.account_type;
         const newOwner = owner ?? existing.owner;
+        const newProvider = provider ?? existing.provider;
 
         await dbClient.execute({
             sql: `UPDATE accounts 
-                  SET account_name = ?, account_type = ?, owner = ?, last_updated = CURRENT_TIMESTAMP
+                  SET account_name = ?, account_type = ?, owner = ?, provider = ?, last_updated = CURRENT_TIMESTAMP
                   WHERE id = ?`,
-            args: [newName, newType, newOwner, id]
+            args: [newName, newType, newOwner, newProvider, id]
         });
 
         return NextResponse.json({

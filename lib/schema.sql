@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS accounts (
     account_name TEXT NOT NULL,
     account_type TEXT NOT NULL,
     owner TEXT NOT NULL DEFAULT 'Joint',
+    provider TEXT,
     current_balance REAL DEFAULT 0,
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pot_id) REFERENCES savings_pots (id) ON DELETE CASCADE

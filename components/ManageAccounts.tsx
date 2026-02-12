@@ -421,14 +421,12 @@ function AccountRow({ account, onClick, onDelete, typeLabels }: {
             </div>
             <div className="pot-info">
                 <div className="pot-name">
-                    {account.provider ? (
-                        <>
-                            <span style={{ fontWeight: 'normal', opacity: 0.8 }}>{account.provider} – </span>
-                            {account.account_name}
-                        </>
-                    ) : (
-                        account.account_name
+                    {account.provider && (
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>
+                            {account.provider}
+                        </div>
                     )}
+                    {account.account_name}
                 </div>
                 <div className="pot-meta">
                     {typeLabels[account.account_type] || account.account_type} ·

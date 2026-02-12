@@ -52,6 +52,9 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
     // Net worth uses totalSavings. Progress uses filtered values.
     const overallProgress = totalGoal > 0 ? (savingsForProgress / totalGoal) * 100 : 0;
 
+    // Filter out Unallocated pot if balance is 0
+    const visiblePots = pots.filter((p: any) => p.name !== 'Unallocated' || p.total_balance !== 0);
+
     if (isLoading) {
         return (
             <div className="stack">
@@ -133,10 +136,10 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
             {/* ─── Savings Pots Breakdown ─── */}
             <div className="section-header">
                 <div className="section-title">Savings Pots</div>
-                <div className="section-link">{pots.length} pot{pots.length !== 1 ? 's' : ''}</div>
+                <div className="section-link">{visiblePots.length} pot{visiblePots.length !== 1 ? 's' : ''}</div>
             </div>
 
-            {pots.length === 0 ? (
+            {visiblePots.length === 0 ? (
                 <div className="empty-state">
                     <div className="empty-state-icon">🏡</div>
                     <div className="empty-state-text">
@@ -146,7 +149,7 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
                 </div>
             ) : (
                 <div className="stack mb-xl">
-                    {pots.map((pot) => {
+                    {visiblePots.map((pot) => {
                         const potAccounts = accounts.filter((a) => a.pot_id === pot.id);
                         return <PotBreakdownCard key={pot.id} pot={pot} accounts={potAccounts} onAccountClick={onAccountClick} />;
                     })}
@@ -240,7 +243,13 @@ function PotBreakdownCard({ pot, accounts, onAccountClick }: { pot: SavingsPot; 
     }
 
     return (
-        <div className="card" style={{ padding: 'var(--sp-lg)' }}>
+        <div className="card" style={{
+            padding: 'var(--sp-lg)',
+            ...(pot.name === 'Unallocated' ? {
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid var(--error)',
+            } : {})
+        }}>
             <div className="flex items-center justify-between mb-md">
                 <div className="flex items-center gap-md">
                     <div className="pot-icon" style={{ background: `${pot.color}25` }}>

@@ -55,6 +55,12 @@ async function initializeDatabase() {
             await dbClient.execute("ALTER TABLE accounts ADD COLUMN owner TEXT NOT NULL DEFAULT 'Joint'");
             console.log('Migration: added owner column');
         }
+
+        const hasProvider = cols.some(c => c.name === 'provider');
+        if (!hasProvider) {
+            await dbClient.execute("ALTER TABLE accounts ADD COLUMN provider TEXT");
+            console.log('Migration: added provider column');
+        }
     } catch (e) {
         console.error('Migration check failed', e);
     }

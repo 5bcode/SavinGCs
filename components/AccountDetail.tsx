@@ -27,6 +27,8 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
 
     // Editable fields
     const [balance, setBalance] = useState('');
+    const [accountName, setAccountName] = useState('');
+    const [provider, setProvider] = useState('');
     const [accountType, setAccountType] = useState('');
     const [owner, setOwner] = useState('');
 
@@ -46,6 +48,8 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
 
             setTxCount(data.transactionCount || 0);
             setBalance(data.account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 }));
+            setAccountName(data.account.account_name);
+            setProvider(data.account.provider || '');
             setAccountType(data.account.account_type);
             setOwner(data.account.owner || 'Joint');
         } catch (error) {
@@ -57,7 +61,10 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
 
     const hasMetadataChanges = () => {
         if (!account) return false;
-        return accountType !== account.account_type || owner !== (account.owner || 'Joint');
+        return accountName !== account.account_name ||
+            provider !== (account.provider || '') ||
+            accountType !== account.account_type ||
+            owner !== (account.owner || 'Joint');
     };
 
     const hasBalanceChange = () => {
@@ -71,7 +78,8 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
         // If metadata changes exist and there's transaction history, show warning
         if (hasMetadataChanges() && txCount > 0 && !showWarning) {
             setPendingChanges({
-                accountName: account.account_name,
+                accountName,
+                provider,
                 accountType,
                 owner,
                 currentBalance: parseFloat(balance.replace(/,/g, '')),
@@ -93,7 +101,8 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    accountName: account.account_name,
+                    accountName,
+                    provider,
                     accountType,
                     owner,
                 })
@@ -272,6 +281,18 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                         {balanceDiff > 0 ? '↑' : '↓'} {balanceDiff > 0 ? '+' : ''}£{balanceDiff.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                     </div>
                 )}
+            </div>
+
+            {/* Account Name & Provider */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-md)' }}>
+                <div className="form-group">
+                    <label className="form-label">Provider</label>
+                    <input type="text" className="form-input" value={provider} onChange={(e) => setProvider(e.target.value)} placeholder="e.g. Monzo" />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Account Name</label>
+                    <input type="text" className="form-input" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
+                </div>
             </div>
 
             {/* Account Type */}
