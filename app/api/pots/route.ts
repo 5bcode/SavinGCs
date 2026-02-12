@@ -22,12 +22,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
-        const { name, goalAmount, color, icon, priority } = await request.json();
+        const { name, goalAmount, color, icon, priority, goalDate } = await request.json();
 
         const result = await dbClient.execute({
-            sql: `INSERT INTO savings_pots (name, goal_amount, color, icon, priority)
-                  VALUES (?, ?, ?, ?, ?) RETURNING id`,
-            args: [name, goalAmount || null, color || '#059669', icon || 'piggy-bank', priority || 0]
+            sql: `INSERT INTO savings_pots (name, goal_amount, color, icon, priority, goal_date)
+                  VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+            args: [name, goalAmount || null, color || '#059669', icon || 'piggy-bank', priority || 0, goalDate || null]
         });
 
         // Some drivers return lastInsertRowid, others return rows with RETURNING.

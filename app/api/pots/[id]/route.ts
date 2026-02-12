@@ -8,16 +8,13 @@ export async function PATCH(
     const { id } = await context.params;
 
     try {
-        const { name, goalAmount, color, icon, priority } = await request.json();
-
-        // Check if pot exists first? Not strictly necessary for update but good practice.
-        // Turso UPDATE returns rowsAffected.
+        const { name, goalAmount, color, icon, priority, goalDate } = await request.json();
 
         await dbClient.execute({
             sql: `UPDATE savings_pots 
-                  SET name = ?, goal_amount = ?, color = ?, icon = ?, priority = ?
+                  SET name = ?, goal_amount = ?, color = ?, icon = ?, priority = ?, goal_date = ?
                   WHERE id = ?`,
-            args: [name, goalAmount, color, icon, priority, id]
+            args: [name, goalAmount, color, icon, priority, goalDate || null, id]
         });
 
         return NextResponse.json({ success: true });

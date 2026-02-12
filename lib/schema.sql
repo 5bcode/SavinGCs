@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS savings_pots (
   color TEXT DEFAULT '#059669',
   icon TEXT DEFAULT 'piggy-bank',
   priority INTEGER DEFAULT 0,
+  goal_date DATE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
