@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/auth';
 
 export async function POST() {
     const response = NextResponse.json({ success: true });
@@ -7,16 +8,11 @@ export async function POST() {
 }
 
 export async function GET(request: NextRequest) {
-    const session = request.cookies.get('user_session');
+    const user = getSessionUser(request);
 
-    if (!session) {
+    if (!user) {
         return NextResponse.json({ authenticated: false }, { status: 401 });
     }
 
-    try {
-        const user = JSON.parse(session.value);
-        return NextResponse.json({ authenticated: true, user });
-    } catch (error) {
-        return NextResponse.json({ authenticated: false }, { status: 401 });
-    }
+    return NextResponse.json({ authenticated: true, user });
 }
