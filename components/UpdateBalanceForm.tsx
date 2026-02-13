@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/Toast';
 
 interface Account {
     id: number;
@@ -24,6 +25,7 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState<Set<number>>(new Set());
+    const { addToast } = useToast();
 
     useEffect(() => { fetchAccounts(); }, []);
 
@@ -79,10 +81,11 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
             }
 
             setSaved((prev) => new Set(prev).add(account.id));
+            addToast('Balance updated', 'success');
             setTimeout(() => setSaved((prev) => { const next = new Set(prev); next.delete(account.id); return next; }), 2000);
         } catch (error) {
             console.error('Error updating balance:', error);
-            alert('Failed to update balance');
+            addToast('Failed to update balance', 'error');
         } finally {
             setSaving(false);
         }
@@ -97,6 +100,7 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
             await handleUpdateSingle(account);
         }
         setSaving(false);
+        addToast('All balances saved', 'success');
         onSuccess();
     };
 
@@ -159,9 +163,18 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                                                 <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '1rem' }}>£</span>
                                                 <input
                                                     type="text"
+                                                    inputMode="decimal"
+                                                    autoComplete="off"
+                                                    aria-label={`Update balance for ${account.account_name}`}
                                                     className="form-input"
                                                     value={balances[account.id] || ''}
                                                     onChange={(e) => setBalances({ ...balances, [account.id]: e.target.value })}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.preventDefault();
+                                                            handleUpdateSingle(account);
+                                                        }
+                                                    }}
                                                     onFocus={(e) => {
                                                         const val = e.target.value.replace(/,/g, '');
                                                         setBalances({ ...balances, [account.id]: val });
@@ -182,6 +195,8 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                                                 style={{ padding: '12px 16px', minHeight: 'auto', fontSize: '0.8rem' }}
                                                 onClick={() => handleUpdateSingle(account)}
                                                 disabled={saving || parseFloat((balances[account.id] || '0').replace(/,/g, '')) === account.current_balance}
+                                                aria-label={`Save balance for ${account.account_name}`}
+                                                title={`Save balance for ${account.account_name}`}
                                             >
                                                 Save
                                             </button>
