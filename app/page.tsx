@@ -2,12 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { mutate } from 'swr';
+import dynamic from 'next/dynamic';
 import Dashboard from '@/components/Dashboard';
 import Login from '@/components/Login';
-import SpreadsheetView from '@/components/SpreadsheetView';
-import ManagePots from '@/components/ManagePots';
-import ManageAccounts from '@/components/ManageAccounts';
 import UpdateBalanceForm from '@/components/UpdateBalanceForm';
+
+const SpreadsheetView = dynamic(() => import('@/components/SpreadsheetView'), {
+  loading: () => <div className="skeleton" style={{ height: '400px' }} />
+});
+const ManagePots = dynamic(() => import('@/components/ManagePots'), {
+  loading: () => <div className="skeleton" style={{ height: '400px' }} />
+});
+const ManageAccounts = dynamic(() => import('@/components/ManageAccounts'), {
+  loading: () => <div className="skeleton" style={{ height: '400px' }} />
+});
 import AccountDetail from '@/components/AccountDetail';
 import NotificationsPanel from '@/components/NotificationsPanel';
 import ToastNotifications from '@/components/ToastNotifications';
