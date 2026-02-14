@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTransactions } from '@/hooks/useSavingsData';
 
 import NetWorthChart from './NetWorthChart';
@@ -17,6 +17,17 @@ interface Transaction {
 
 export default function SpreadsheetView() {
     const { transactions, isLoading: loading } = useTransactions();
+
+    // Group transactions by date
+    const grouped = useMemo(() => {
+        const g: Record<string, Transaction[]> = {};
+        transactions.forEach((tx) => {
+            const dateKey = new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            if (!g[dateKey]) g[dateKey] = [];
+            g[dateKey].push(tx);
+        });
+        return g;
+    }, [transactions]);
 
     const handleExport = async () => {
         try {
@@ -36,14 +47,6 @@ export default function SpreadsheetView() {
     };
 
     if (loading) return <div className="skeleton" style={{ height: '300px' }} />;
-
-    // Group transactions by date
-    const grouped: Record<string, Transaction[]> = {};
-    transactions.forEach((tx) => {
-        const dateKey = new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        if (!grouped[dateKey]) grouped[dateKey] = [];
-        grouped[dateKey].push(tx);
-    });
 
     return (
         <div>
