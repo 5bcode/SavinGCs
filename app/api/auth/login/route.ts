@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { dbClient, ensureInitialized } from '@/lib/db_turso';
+import { signSession } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
     await ensureInitialized();
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Set cookie — 30 days if remember me, otherwise session only
-        response.cookies.set('user_session', JSON.stringify({
+        response.cookies.set('user_session', signSession({
             id: user.id,
             username: user.username,
             displayName: user.display_name
