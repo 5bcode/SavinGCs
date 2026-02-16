@@ -29,6 +29,11 @@ export async function GET(request: NextRequest) {
 
         const args: any[] = [];
 
+        // Security: Filter transactions by account ownership
+        // Users can only see transactions if the account is 'Joint' or they own it
+        query += ` AND (a.owner = 'Joint' OR a.owner = ?)`;
+        args.push(user.displayName);
+
         if (potId) {
             query += ` AND a.pot_id = ?`;
             args.push(potId);
