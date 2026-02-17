@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTransactions } from '@/hooks/useSavingsData';
 
 import NetWorthChart from './NetWorthChart';
@@ -17,6 +17,45 @@ interface Transaction {
 
 export default function SpreadsheetView() {
     const { transactions, isLoading: loading } = useTransactions();
+
+    // Group transactions by date
+    const grouped = useMemo(() => {
+        const result: Record<string, Transaction[]> = {};
+        const monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        transactions.forEach((tx) => {
+            let dateKey = '';
+            // Optimization: Parse "YYYY-MM-DD" manually to avoid Date object creation overhead
+            if (tx.transaction_date && tx.transaction_date.includes('-')) {
+                const parts = tx.transaction_date.split('-');
+                if (parts.length === 3) {
+                    const year = parts[0];
+                    const month = parseInt(parts[1], 10) - 1;
+                    const day = parseInt(parts[2], 10);
+
+                    if (month >= 0 && month < 12 && !isNaN(day)) {
+                        dateKey = `${day} ${monthNames[month]} ${year}`;
+                    }
+                }
+            }
+
+            // Fallback
+            if (!dateKey) {
+                try {
+                    dateKey = new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                } catch (e) {
+                    dateKey = 'Unknown Date';
+                }
+            }
+
+            if (!result[dateKey]) result[dateKey] = [];
+            result[dateKey].push(tx);
+        });
+        return result;
+    }, [transactions]);
 
     const handleExport = async () => {
         try {
@@ -36,14 +75,6 @@ export default function SpreadsheetView() {
     };
 
     if (loading) return <div className="skeleton" style={{ height: '300px' }} />;
-
-    // Group transactions by date
-    const grouped: Record<string, Transaction[]> = {};
-    transactions.forEach((tx) => {
-        const dateKey = new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        if (!grouped[dateKey]) grouped[dateKey] = [];
-        grouped[dateKey].push(tx);
-    });
 
     return (
         <div>
