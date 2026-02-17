@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifySession } from './session';
+
+export { signSession, verifySession } from './session';
 
 /**
  * Validates the user session from cookies.
@@ -8,13 +11,9 @@ export function getSessionUser(request: NextRequest): { id: number; username: st
     const session = request.cookies.get('user_session');
     if (!session) return null;
 
-    try {
-        const user = JSON.parse(session.value);
-        if (user && user.id && user.username) return user;
-        return null;
-    } catch {
-        return null;
-    }
+    const user = verifySession(session.value);
+    if (user && user.id && user.username) return user;
+    return null;
 }
 
 /**
