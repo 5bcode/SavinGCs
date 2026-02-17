@@ -159,6 +159,8 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                                                 <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '1rem' }}>£</span>
                                                 <input
                                                     type="text"
+                                                    inputMode="decimal"
+                                                    aria-label={`Update balance for ${account.account_name}`}
                                                     className="form-input"
                                                     value={balances[account.id] || ''}
                                                     onChange={(e) => setBalances({ ...balances, [account.id]: e.target.value })}
@@ -179,6 +181,7 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                                             <button
                                                 type="button"
                                                 className="btn btn-teal"
+                                                aria-label={`Save balance for ${account.account_name}`}
                                                 style={{ padding: '12px 16px', minHeight: 'auto', fontSize: '0.8rem' }}
                                                 onClick={() => handleUpdateSingle(account)}
                                                 disabled={saving || parseFloat((balances[account.id] || '0').replace(/,/g, '')) === account.current_balance}
