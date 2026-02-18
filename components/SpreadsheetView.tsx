@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTransactions } from '@/hooks/useSavingsData';
 
 import NetWorthChart from './NetWorthChart';
@@ -35,15 +35,24 @@ export default function SpreadsheetView() {
         }
     };
 
-    if (loading) return <div className="skeleton" style={{ height: '300px' }} />;
+    // Group transactions by date (Memoized for performance)
+    const grouped = useMemo(() => {
+        const groups: Record<string, Transaction[]> = {};
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-    // Group transactions by date
-    const grouped: Record<string, Transaction[]> = {};
-    transactions.forEach((tx) => {
-        const dateKey = new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-        if (!grouped[dateKey]) grouped[dateKey] = [];
-        grouped[dateKey].push(tx);
-    });
+        transactions.forEach((tx) => {
+            // Optimization: Avoid new Date() instantiation overhead by manual string parsing
+            // Expected format: YYYY-MM-DD
+            const [year, month, day] = tx.transaction_date.split('-');
+            const dateKey = `${parseInt(day)} ${months[parseInt(month) - 1]} ${year}`;
+
+            if (!groups[dateKey]) groups[dateKey] = [];
+            groups[dateKey].push(tx);
+        });
+        return groups;
+    }, [transactions]);
+
+    if (loading) return <div className="skeleton" style={{ height: '300px' }} />;
 
     return (
         <div>
