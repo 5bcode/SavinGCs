@@ -14,8 +14,8 @@ export async function DELETE(
 
     try {
         await dbClient.execute({
-            sql: 'DELETE FROM transactions WHERE id = ?',
-            args: [id]
+            sql: 'DELETE FROM transactions WHERE id = ? AND user_id = ?',
+            args: [id, user.id]
         });
 
         // Trigger (trg_reverse_balance_on_delete) handles balance update automatically

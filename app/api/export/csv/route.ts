@@ -10,21 +10,25 @@ export async function GET(request: NextRequest) {
     await ensureInitialized();
 
     try {
-        const result = await dbClient.execute(`
-            SELECT 
-                sp.name as pot_name,
-                sp.goal_amount,
-                a.*,
-                t.transaction_date,
-                t.amount as transaction_amount,
-                t.description,
-                u.display_name as user_name
-            FROM savings_pots sp
-            LEFT JOIN accounts a ON a.pot_id = sp.id
-            LEFT JOIN transactions t ON t.account_id = a.id
-            LEFT JOIN users u ON u.id = t.user_id
-            ORDER BY sp.priority DESC, a.account_name ASC, t.transaction_date DESC
-        `);
+        const result = await dbClient.execute({
+            sql: `
+                SELECT
+                    sp.name as pot_name,
+                    sp.goal_amount,
+                    a.*,
+                    t.transaction_date,
+                    t.amount as transaction_amount,
+                    t.description,
+                    u.display_name as user_name
+                FROM savings_pots sp
+                LEFT JOIN accounts a ON a.pot_id = sp.id
+                LEFT JOIN transactions t ON t.account_id = a.id
+                LEFT JOIN users u ON u.id = t.user_id
+                WHERE t.user_id = ?
+                ORDER BY sp.priority DESC, a.account_name ASC, t.transaction_date DESC
+            `,
+            args: [user.id]
+        });
 
         const data = result.rows;
 

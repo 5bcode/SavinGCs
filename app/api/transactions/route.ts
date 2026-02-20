@@ -24,10 +24,10 @@ export async function GET(request: NextRequest) {
             LEFT JOIN accounts a ON a.id = t.account_id
             LEFT JOIN savings_pots sp ON sp.id = a.pot_id
             LEFT JOIN users u ON u.id = t.user_id
-            WHERE 1=1
+            WHERE t.user_id = ?
         `;
 
-        const args: any[] = [];
+        const args: any[] = [user.id];
 
         if (potId) {
             query += ` AND a.pot_id = ?`;
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     await ensureInitialized();
 
     try {
-        const { accountId, userId, amount, description, transactionDate } = await request.json();
+        const { accountId, amount, description, transactionDate } = await request.json();
 
         // Get current account and pot info BEFORE transaction
         const accountResult = await dbClient.execute({
@@ -69,11 +69,20 @@ export async function POST(request: NextRequest) {
         });
         const account = accountResult.rows[0];
 
+        if (!account) {
+            return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+        }
+
+        // Check ownership (IDOR protection)
+        if (account.owner !== 'Joint' && account.owner !== user.displayName) {
+            return NextResponse.json({ error: 'Unauthorized account access' }, { status: 403 });
+        }
+
         // Balance update is handled automatically by trg_update_balance_after_transaction trigger
         const txResult = await dbClient.execute({
             sql: `INSERT INTO transactions (account_id, user_id, amount, description, transaction_date)
                   VALUES (?, ?, ?, ?, ?) RETURNING id`,
-            args: [accountId, userId, amount, description || '', transactionDate]
+            args: [accountId, user.id, amount, description || '', transactionDate]
         });
 
         let newTxId = Number(txResult.lastInsertRowid);
@@ -95,7 +104,7 @@ export async function POST(request: NextRequest) {
                 Number(account.pot_id),
                 updatedPotBalance,
                 account.goal_amount ? Number(account.goal_amount) : null,
-                userId
+                user.id
             );
 
             return NextResponse.json({
