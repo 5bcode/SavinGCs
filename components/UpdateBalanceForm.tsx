@@ -133,7 +133,7 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                                     <div key={account.id} className="card" style={{ padding: 'var(--sp-md)' }}>
                                         <div className="flex justify-between items-center mb-sm">
                                             <div>
-                                                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{account.account_name}</div>
+                                                <div id={`acc-name-${account.id}`} style={{ fontWeight: 600, fontSize: '0.9rem' }}>{account.account_name}</div>
                                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
                                                     Current: £{account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })} · {account.account_type} ·
                                                     <span style={{
@@ -159,6 +159,8 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                                                 <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '1rem' }}>£</span>
                                                 <input
                                                     type="text"
+                                                    inputMode="decimal"
+                                                    aria-labelledby={`acc-name-${account.id}`}
                                                     className="form-input"
                                                     value={balances[account.id] || ''}
                                                     onChange={(e) => setBalances({ ...balances, [account.id]: e.target.value })}
@@ -179,6 +181,7 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                                             <button
                                                 type="button"
                                                 className="btn btn-teal"
+                                                aria-label={`Save ${account.account_name} balance`}
                                                 style={{ padding: '12px 16px', minHeight: 'auto', fontSize: '0.8rem' }}
                                                 onClick={() => handleUpdateSingle(account)}
                                                 disabled={saving || parseFloat((balances[account.id] || '0').replace(/,/g, '')) === account.current_balance}
@@ -205,7 +208,13 @@ export default function UpdateBalanceForm({ onSuccess, currentUser }: UpdateBala
                         </div>
                     ))}
 
-                    <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--sp-md)' }} onClick={handleSaveAll} disabled={saving}>
+                    <button
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginTop: 'var(--sp-md)' }}
+                        onClick={handleSaveAll}
+                        disabled={saving}
+                        aria-busy={saving}
+                    >
                         {saving ? 'Saving...' : 'Save All Changes'}
                     </button>
                 </>
