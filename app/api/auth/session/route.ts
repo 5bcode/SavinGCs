@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifySession } from '@/lib/session';
 
 export async function POST() {
     const response = NextResponse.json({ success: true });
@@ -14,7 +15,12 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const user = JSON.parse(session.value);
+        const user = verifySession(session.value);
+
+        if (!user) {
+             return NextResponse.json({ authenticated: false }, { status: 401 });
+        }
+
         return NextResponse.json({ authenticated: true, user });
     } catch (error) {
         return NextResponse.json({ authenticated: false }, { status: 401 });
