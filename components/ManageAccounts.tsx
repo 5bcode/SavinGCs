@@ -191,6 +191,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                 <div className="flex gap-sm bg-secondary p-1 rounded-md" style={{ background: 'var(--bg-secondary)', padding: '4px', borderRadius: 'var(--r-md)' }}>
                     <button
                         onClick={() => setViewMode('pot')}
+                        aria-pressed={viewMode === 'pot'}
                         className={viewMode === 'pot' ? 'btn-pill-active' : 'btn-pill'}
                         style={{
                             fontSize: '0.75rem',
@@ -207,6 +208,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                     </button>
                     <button
                         onClick={() => setViewMode('owner')}
+                        aria-pressed={viewMode === 'owner'}
                         className={viewMode === 'owner' ? 'btn-pill-active' : 'btn-pill'}
                         style={{
                             fontSize: '0.75rem',
@@ -297,7 +299,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                     </div>
                     <div className="form-group">
                         <label className="form-label">Starting Balance (£)</label>
-                        <input type="text" className="form-input" value={formData.currentBalance}
+                        <input type="text" inputMode="decimal" className="form-input" value={formData.currentBalance}
                             onChange={(e) => setFormData({ ...formData, currentBalance: e.target.value })}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
@@ -450,7 +452,7 @@ function AccountRow({ account, onClick, onDelete, typeLabels }: {
                 <div className="pot-amount">
                     £{account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="icon-btn" style={{ color: 'var(--error)', width: '32px', height: '32px' }}>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} aria-label="Delete account" className="icon-btn" style={{ color: 'var(--error)', width: '32px', height: '32px' }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
