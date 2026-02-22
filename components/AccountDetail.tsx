@@ -409,6 +409,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                                     <button
                                         onClick={() => handleUnallocate(tx)}
                                         className="icon-btn"
+                                        aria-label="Unallocate funds"
                                         title="Unallocate / Reverse"
                                         style={{ color: 'var(--error)', padding: '4px' }}
                                     >
@@ -426,6 +427,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                                 <button
                                     onClick={() => handleDeleteTx(tx)}
                                     className="icon-btn"
+                                    aria-label="Delete transaction record"
                                     title="Delete Record Only"
                                     style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}
                                 >
