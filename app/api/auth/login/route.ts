@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs';
 import { dbClient, ensureInitialized } from '@/lib/db_turso';
 import { signSession } from '@/lib/session';
 
+// Constant-time comparison dummy hash to prevent username enumeration
+const DUMMY_HASH = '$2b$10$/Nnm2f5b6CxVhvf1vqJ3Su2sIx/DLmNLPABl1ZkXrOlkJGDTcwzs.';
+
 export async function POST(request: NextRequest) {
     await ensureInitialized();
 
@@ -23,17 +26,11 @@ export async function POST(request: NextRequest) {
 
         const user = result.rows[0];
 
-        if (!user) {
-            return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
-            );
-        }
+        // Always verify password to prevent timing attacks
+        const targetHash = user ? (user.password_hash as string) : DUMMY_HASH;
+        const isValid = bcrypt.compareSync(password, targetHash);
 
-        const passwordHash = user.password_hash as string;
-        const isValid = bcrypt.compareSync(password, passwordHash);
-
-        if (!isValid) {
+        if (!user || !isValid) {
             return NextResponse.json(
                 { error: 'Invalid credentials' },
                 { status: 401 }
