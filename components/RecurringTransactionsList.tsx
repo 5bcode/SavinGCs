@@ -18,22 +18,22 @@ export default function RecurringTransactionsList() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchRecurring();
-    }, []);
+        const fetchRecurring = async () => {
+            try {
+                const res = await fetch('/api/recurring');
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+                setRecurring(data.recurring || []);
+            } catch (error) {
+                console.error('Error fetching recurring transactions:', error);
+                addToast('Failed to load recurring transactions', 'error');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const fetchRecurring = async () => {
-        try {
-            const res = await fetch('/api/recurring');
-            if (!res.ok) throw new Error('Failed to fetch');
-            const data = await res.json();
-            setRecurring(data.recurring || []);
-        } catch (error) {
-            console.error('Error fetching recurring transactions:', error);
-            addToast('Failed to load recurring transactions', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
+        fetchRecurring();
+    }, [addToast]);
 
     const handleDelete = async (id: number) => {
         if (!confirm('Are you sure you want to delete this recurring rule?')) return;
@@ -73,7 +73,12 @@ export default function RecurringTransactionsList() {
                             }}>
                                 {rt.amount >= 0 ? '+' : ''}£{Math.abs(rt.amount).toLocaleString('en-GB')}
                             </div>
-                            <button onClick={() => handleDelete(rt.id)} className="btn-ghost" style={{ padding: '8px', color: 'var(--error)' }}>
+                            <button
+                                onClick={() => handleDelete(rt.id)}
+                                className="btn-ghost"
+                                style={{ padding: '8px', color: 'var(--error)' }}
+                                aria-label={`Delete recurring rule ${rt.description || 'Recurring Transaction'}`}
+                            >
                                 🗑️
                             </button>
                         </div>
