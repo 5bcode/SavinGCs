@@ -1,4 +1,7 @@
-## 2024-05-22 - [CRITICAL] Insecure Session Cookie Tampering
-**Vulnerability:** Session cookies (`user_session`) were stored as plain, unsigned JSON objects. Any user could modify the cookie to impersonate another user (Broken Access Control).
-**Learning:** The implementation relied on `JSON.parse` of the cookie value without any cryptographic verification, assuming the client wouldn't tamper with it. This is a common mistake when rolling custom auth.
-**Prevention:** Always use cryptographic signatures (HMAC) or encryption for client-side session storage. Never trust client-provided data without verification. Implemented `lib/session.ts` to sign and verify cookies.
+## 2025-05-23 - Username Enumeration via Timing Attack
+
+**Vulnerability:** The login endpoint `app/api/auth/login/route.ts` returned immediately if a username was not found in the database, but performed a computationally expensive `bcrypt.compareSync` operation (taking ~240ms) if the username existed. This significant timing difference allowed an attacker to enumerate valid usernames by measuring the response time.
+
+**Learning:** Conditional logic that skips expensive cryptographic operations based on the existence of a record creates a side-channel vulnerability. Even if the error message is identical ("Invalid credentials"), the time to generate that error reveals internal state.
+
+**Prevention:** Ensure that authentication checks always perform the same amount of work regardless of the outcome. In this case, I implemented a "dummy comparison" using a pre-calculated valid bcrypt hash (`DUMMY_HASH`) when the user is not found, ensuring that `bcrypt.compareSync` is executed in all scenarios.
