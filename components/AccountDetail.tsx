@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { formatDateShort } from '@/lib/utils';
 
 interface BalanceHistoryEntry {
     balance: number;
@@ -393,7 +394,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                         }}>
                             <div style={{ flex: 1, overflow: 'hidden' }}>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                    {new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                    {formatDateShort(tx.transaction_date)}
                                 </div>
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {tx.description || 'Transaction'}
