@@ -182,7 +182,12 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
         <div>
             <div className="section-header">
                 <div className="section-title">Your Accounts</div>
-                <button className="btn btn-primary" style={{ padding: '8px 16px', minHeight: 'auto', fontSize: '0.8rem' }} onClick={() => setShowForm(!showForm)}>
+                <button
+                    className="btn btn-primary"
+                    style={{ padding: '8px 16px', minHeight: 'auto', fontSize: '0.8rem' }}
+                    onClick={() => setShowForm(!showForm)}
+                    aria-label={showForm ? 'Cancel add account' : 'Add new account'}
+                >
                     {showForm ? 'Cancel' : '+ Add Account'}
                 </button>
             </div>
@@ -202,6 +207,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                             cursor: 'pointer',
                             fontWeight: 600
                         }}
+                        aria-label="Group accounts by Pot"
                     >
                         By Pot
                     </button>
@@ -218,6 +224,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                             cursor: 'pointer',
                             fontWeight: 600
                         }}
+                        aria-label="Group accounts by Owner"
                     >
                         By Owner
                     </button>
@@ -234,6 +241,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                         border: '1px solid var(--border)',
                         cursor: 'pointer'
                     }}
+                    aria-label={showEmpty ? 'Show only active accounts' : 'Show all accounts including empty ones'}
                 >
                     {showEmpty ? 'Showing All' : 'Hide Empty'}
                 </button>
@@ -450,7 +458,12 @@ function AccountRow({ account, onClick, onDelete, typeLabels }: {
                 <div className="pot-amount">
                     £{account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="icon-btn" style={{ color: 'var(--error)', width: '32px', height: '32px' }}>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="icon-btn"
+                    style={{ color: 'var(--error)', width: '32px', height: '32px' }}
+                    aria-label={`Delete account ${account.account_name}`}
+                >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
