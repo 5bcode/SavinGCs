@@ -192,6 +192,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                     <button
                         onClick={() => setViewMode('pot')}
                         className={viewMode === 'pot' ? 'btn-pill-active' : 'btn-pill'}
+                        aria-pressed={viewMode === 'pot'}
                         style={{
                             fontSize: '0.75rem',
                             padding: '4px 12px',
@@ -208,6 +209,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                     <button
                         onClick={() => setViewMode('owner')}
                         className={viewMode === 'owner' ? 'btn-pill-active' : 'btn-pill'}
+                        aria-pressed={viewMode === 'owner'}
                         style={{
                             fontSize: '0.75rem',
                             padding: '4px 12px',
@@ -226,6 +228,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                 <button
                     onClick={() => setShowEmpty(!showEmpty)}
                     className="btn-pill"
+                    aria-pressed={showEmpty}
                     style={{
                         fontSize: '0.7rem',
                         padding: '4px 12px',
@@ -450,7 +453,7 @@ function AccountRow({ account, onClick, onDelete, typeLabels }: {
                 <div className="pot-amount">
                     £{account.current_balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="icon-btn" style={{ color: 'var(--error)', width: '32px', height: '32px' }}>
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="icon-btn" style={{ color: 'var(--error)', width: '32px', height: '32px' }} aria-label="Delete account">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                     </svg>

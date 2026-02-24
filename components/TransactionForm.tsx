@@ -110,10 +110,10 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
             <div className="form-group">
                 <label className="form-label">Type</label>
                 <div className="toggle-group">
-                    <button type="button" className={`toggle-option${isDeposit ? ' active' : ''}`} onClick={() => setIsDeposit(true)}>
+                    <button type="button" className={`toggle-option${isDeposit ? ' active' : ''}`} onClick={() => setIsDeposit(true)} aria-pressed={isDeposit}>
                         💰 Deposit
                     </button>
-                    <button type="button" className={`toggle-option${!isDeposit ? ' active' : ''}`} onClick={() => setIsDeposit(false)}>
+                    <button type="button" className={`toggle-option${!isDeposit ? ' active' : ''}`} onClick={() => setIsDeposit(false)} aria-pressed={!isDeposit}>
                         💸 Withdrawal
                     </button>
                 </div>
@@ -196,6 +196,7 @@ export default function TransactionForm({ onSuccess, currentUser }: TransactionF
                                 className={`toggle-option${frequency === freq ? ' active' : ''}`}
                                 onClick={() => setFrequency(freq)}
                                 style={{ textTransform: 'capitalize' }}
+                                aria-pressed={frequency === freq}
                             >
                                 {freq}
                             </button>
