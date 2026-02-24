@@ -21,7 +21,7 @@ export default function NetWorthChart({ transactions }: { transactions: Transact
 
         // 1. Sort transactions by date
         const sorted = [...transactions].sort((a, b) =>
-            new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
+            a.transaction_date.localeCompare(b.transaction_date)
         );
 
         // 2. Group by date and calculate daily cumulative balance
