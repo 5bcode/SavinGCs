@@ -23,17 +23,15 @@ export async function POST(request: NextRequest) {
 
         const user = result.rows[0];
 
-        if (!user) {
-            return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
-            );
-        }
+        // 🛡️ SENTINEL: Timing Attack Protection
+        // Always perform a bcrypt comparison to prevent username enumeration via timing attacks.
+        // If the user is not found, we compare against a dummy hash so the response time is consistent.
+        const DUMMY_HASH = '$2b$10$j3elaMrnGMnLzShCTd1H7u8i.O4lpWC7avkHMVR0ZPBaGWq91ZucS';
 
-        const passwordHash = user.password_hash as string;
-        const isValid = bcrypt.compareSync(password, passwordHash);
+        const targetHash = user ? (user.password_hash as string) : DUMMY_HASH;
+        const isValid = bcrypt.compareSync(password, targetHash);
 
-        if (!isValid) {
+        if (!user || !isValid) {
             return NextResponse.json(
                 { error: 'Invalid credentials' },
                 { status: 401 }
