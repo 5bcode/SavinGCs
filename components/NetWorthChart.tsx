@@ -20,8 +20,9 @@ export default function NetWorthChart({ transactions }: { transactions: Transact
         if (!transactions.length) return [];
 
         // 1. Sort transactions by date
+        // Optimized: Lexicographical sort is faster than creating Date objects for YYYY-MM-DD
         const sorted = [...transactions].sort((a, b) =>
-            new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
+            a.transaction_date.localeCompare(b.transaction_date)
         );
 
         // 2. Group by date and calculate daily cumulative balance
@@ -42,7 +43,8 @@ export default function NetWorthChart({ transactions }: { transactions: Transact
         const points = Array.from(dailyBalances.entries()).map(([date, value]) => ({
             date,
             value,
-            timestamp: new Date(date).getTime()
+            // Optimized: Date.parse is faster than new Date() for getting timestamp
+            timestamp: Date.parse(date)
         }));
 
         return points;
