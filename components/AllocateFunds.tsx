@@ -233,6 +233,7 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                 <div className="relative" style={{ position: 'relative' }}>
                                     <input
                                         type="text"
+                                        inputMode="decimal"
                                         className="form-input"
                                         value={amount}
                                         onChange={e => setAmount(e.target.value)}
