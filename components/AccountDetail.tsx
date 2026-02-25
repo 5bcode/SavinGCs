@@ -253,6 +253,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                     <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)', fontWeight: 700, fontSize: '1.1rem' }}>£</span>
                     <input
                         type="text"
+                        inputMode="decimal"
                         className="form-input"
                         value={balance}
                         onChange={(e) => setBalance(e.target.value)}
@@ -410,6 +411,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                                         onClick={() => handleUnallocate(tx)}
                                         className="icon-btn"
                                         title="Unallocate / Reverse"
+                                        aria-label="Unallocate transaction"
                                         style={{ color: 'var(--error)', padding: '4px' }}
                                     >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -427,6 +429,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                                     onClick={() => handleDeleteTx(tx)}
                                     className="icon-btn"
                                     title="Delete Record Only"
+                                    aria-label="Delete transaction record"
                                     style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
