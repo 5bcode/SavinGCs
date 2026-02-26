@@ -88,6 +88,9 @@ CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions (account_id)
 
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions (transaction_date DESC);
 
+-- Composite index to optimize user-filtered transaction list with sorting
+CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions (user_id, transaction_date DESC, created_at DESC);
+
 CREATE INDEX IF NOT EXISTS idx_balance_history_account ON balance_history (account_id);
 
 CREATE INDEX IF NOT EXISTS idx_balance_history_date ON balance_history (recorded_date DESC);
