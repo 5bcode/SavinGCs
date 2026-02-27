@@ -234,6 +234,8 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                         <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
                             {iconPairs.map(([key, emoji]) => (
                                 <button key={key} type="button"
+                                    aria-label={`Select icon ${key}`}
+                                    aria-pressed={formData.icon === key}
                                     onClick={() => setFormData({ ...formData, icon: key })}
                                     style={{
                                         width: '44px', height: '44px', borderRadius: 'var(--r-md)',
@@ -249,7 +251,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                         <label className="form-label">Color</label>
                         <div className="flex gap-sm">
                             {colorOptions.map((c) => (
-                                <button key={c} type="button" onClick={() => setFormData({ ...formData, color: c })}
+                                <button key={c} type="button" aria-label={`Select color ${c}`} aria-pressed={formData.color === c} onClick={() => setFormData({ ...formData, color: c })}
                                     style={{
                                         width: '36px', height: '36px', borderRadius: 'var(--r-full)', background: c,
                                         border: formData.color === c ? '3px solid white' : '2px solid transparent',
@@ -290,14 +292,15 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                             onClick={(e) => { e.stopPropagation(); isEditing ? cancelEditing() : startEditing(pot); }}
                                             className="icon-btn"
                                             style={{ color: isEditing ? 'var(--purple-mid)' : 'var(--text-secondary)' }}
-                                            title="Edit pot"
+                                            title={isEditing ? `Cancel editing ${pot.pot_name}` : `Edit pot ${pot.pot_name}`}
+                                            aria-label={isEditing ? `Cancel editing ${pot.pot_name}` : `Edit pot ${pot.pot_name}`}
                                         >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                             </svg>
                                         </button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(pot.id); }} className="icon-btn" style={{ color: 'var(--error)' }}>
+                                        <button aria-label={`Delete pot ${pot.pot_name}`} title={`Delete pot ${pot.pot_name}`} onClick={(e) => { e.stopPropagation(); handleDelete(pot.id); }} className="icon-btn" style={{ color: 'var(--error)' }}>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                             </svg>
@@ -389,7 +392,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                             }
                                                         }}
                                                     />
-                                                    <button type="button" className="icon-btn" onClick={() => {
+                                                    <button type="button" aria-label={`Delete subgoal ${sg.name}`} title={`Delete subgoal ${sg.name}`} className="icon-btn" onClick={() => {
                                                         const newSubGoals = [...editData.subGoals];
                                                         newSubGoals.splice(idx, 1);
 
@@ -448,7 +451,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                     }
                                                 }}
                                             />
-                                            <button type="button" className="btn btn-secondary" style={{ minHeight: '38px' }} onClick={() => {
+                                            <button type="button" aria-label="Add subgoal" title="Add subgoal" className="btn btn-secondary" style={{ minHeight: '38px' }} onClick={() => {
                                                 const nameInput = document.getElementById(`new-sg-name-${editingPotId}`) as HTMLInputElement;
                                                 const amtInput = document.getElementById(`new-sg-amt-${editingPotId}`) as HTMLInputElement;
                                                 if (nameInput.value && amtInput.value) {
@@ -491,6 +494,8 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                         <div className="flex gap-sm" style={{ flexWrap: 'wrap' }}>
                                             {iconPairs.map(([key, emoji]) => (
                                                 <button key={key} type="button"
+                                                    aria-label={`Select icon ${key}`}
+                                                    aria-pressed={editData.icon === key}
                                                     onClick={() => setEditData({ ...editData, icon: key })}
                                                     style={{
                                                         width: '40px', height: '40px', borderRadius: 'var(--r-md)',
@@ -507,7 +512,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                         <label className="form-label">Color</label>
                                         <div className="flex gap-sm">
                                             {colorOptions.map((c) => (
-                                                <button key={c} type="button" onClick={() => setEditData({ ...editData, color: c })}
+                                                <button key={c} type="button" aria-label={`Select color ${c}`} aria-pressed={editData.color === c} onClick={() => setEditData({ ...editData, color: c })}
                                                     style={{
                                                         width: '32px', height: '32px', borderRadius: 'var(--r-full)', background: c,
                                                         border: editData.color === c ? '3px solid white' : '2px solid transparent',
