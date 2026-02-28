@@ -1,6 +1,6 @@
 'use client';
 
-import { getIcon } from '@/lib/utils'; // We'll need to move getIcon util or redefine it
+import { getIcon, formatDateShort } from '@/lib/utils'; // We'll need to move getIcon util or redefine it
 
 interface SubGoal {
     id: number;
@@ -96,7 +96,7 @@ export default function PotCard({ pot, accounts, onAccountClick }: PotCardProps)
                                 Goal: £{pot.goal_amount.toLocaleString('en-GB')}
                                 {pot.goal_date && (
                                     <span style={{ marginLeft: '6px', opacity: 0.7 }}>
-                                        by {new Date(pot.goal_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+                                        by {formatDateShort(pot.goal_date, false)}
                                     </span>
                                 )}
                             </div>

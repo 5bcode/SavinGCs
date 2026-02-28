@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { formatDateShort } from '@/lib/utils';
 
 interface NotificationsPanelProps {
     onNavigate?: (view: string) => void;
@@ -231,5 +232,5 @@ const formatTime = (dateString: string) => {
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
+    return formatDateShort(dateString);
 };

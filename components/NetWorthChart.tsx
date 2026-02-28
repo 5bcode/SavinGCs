@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { formatDateShort } from '@/lib/utils';
 
 interface Transaction {
     id: number;
@@ -21,7 +22,7 @@ export default function NetWorthChart({ transactions }: { transactions: Transact
 
         // 1. Sort transactions by date
         const sorted = [...transactions].sort((a, b) =>
-            new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
+            Date.parse(a.transaction_date) - Date.parse(b.transaction_date)
         );
 
         // 2. Group by date and calculate daily cumulative balance
@@ -42,7 +43,7 @@ export default function NetWorthChart({ transactions }: { transactions: Transact
         const points = Array.from(dailyBalances.entries()).map(([date, value]) => ({
             date,
             value,
-            timestamp: new Date(date).getTime()
+            timestamp: Date.parse(date)
         }));
 
         return points;
@@ -144,7 +145,7 @@ export default function NetWorthChart({ transactions }: { transactions: Transact
                         zIndex: 10
                     }}>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
-                            {new Date(hoveredPoint.date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}
+                            {formatDateShort(hoveredPoint.date)}
                         </div>
                         <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                             £{hoveredPoint.value.toLocaleString('en-GB', { minimumFractionDigits: 2 })}

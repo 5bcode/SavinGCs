@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSavingsData } from '@/hooks/useSavingsData';
+import { formatDateShort } from '@/lib/utils';
 
 interface SubGoal {
     id: number;
@@ -280,7 +281,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                     ) : (
                                         <div className="pot-meta">
                                             {pot.goal_amount ? `Goal: £${pot.goal_amount.toLocaleString('en-GB')}` : 'No goal set'}
-                                            {pot.goal_date ? ` · by ${new Date(pot.goal_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}` : ''}
+                                            {pot.goal_date ? ` · by ${formatDateShort(pot.goal_date, false)}` : ''}
                                         </div>
                                     )}
                                 </div>
