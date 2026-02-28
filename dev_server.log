@@ -1,0 +1,14 @@
+
+> savingstracker@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.3
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 1995ms
+ ○ Compiling / ...
+ ✓ Compiled / in 5s (553 modules)
+ GET / 200 in 5458ms
+ ○ Compiling /api/auth/session ...
+ ✓ Compiled /api/auth/session in 3.9s (313 modules)
