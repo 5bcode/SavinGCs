@@ -217,7 +217,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                     </div>
                     <div className="form-group">
                         <label className="form-label">Goal Amount (£)</label>
-                        <input type="text" className="form-input" value={formData.goalAmount}
+                        <input type="text" inputMode="decimal" className="form-input" value={formData.goalAmount}
                             onChange={(e) => setFormData({ ...formData, goalAmount: e.target.value })}
                             onFocus={() => stripCommasOnFocus(formData.goalAmount, (v) => setFormData({ ...formData, goalAmount: v }))}
                             onBlur={() => formatAmountOnBlur(formData.goalAmount, (v) => setFormData({ ...formData, goalAmount: v }))}
@@ -291,13 +291,14 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                             className="icon-btn"
                                             style={{ color: isEditing ? 'var(--purple-mid)' : 'var(--text-secondary)' }}
                                             title="Edit pot"
+                                            aria-label={`Edit pot ${pot.name}`}
                                         >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                             </svg>
                                         </button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(pot.id); }} className="icon-btn" style={{ color: 'var(--error)' }}>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDelete(pot.id); }} className="icon-btn" style={{ color: 'var(--error)' }} aria-label={`Delete pot ${pot.name}`}>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                             </svg>
@@ -330,7 +331,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-md)' }}>
                                         <div className="form-group">
                                             <label className="form-label">Goal Amount (£)</label>
-                                            <input type="text" className="form-input" value={editData.goalAmount}
+                                            <input type="text" inputMode="decimal" className="form-input" value={editData.goalAmount}
                                                 onChange={(e) => setEditData({ ...editData, goalAmount: e.target.value })}
                                                 onFocus={() => stripCommasOnFocus(editData.goalAmount, (v) => setEditData({ ...editData, goalAmount: v }))}
                                                 onBlur={() => formatAmountOnBlur(editData.goalAmount, (v) => setEditData({ ...editData, goalAmount: v }))}
@@ -360,7 +361,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                             setEditData({ ...editData, subGoals: newSubGoals });
                                                         }}
                                                     />
-                                                    <input type="text" className="form-input" value={sg.targetAmount} // stored as formatted string
+                                                    <input type="text" inputMode="decimal" className="form-input" value={sg.targetAmount} // stored as formatted string
                                                         style={{ flex: 1, fontSize: '0.85rem' }}
                                                         onChange={(e) => {
                                                             // Allow typing, strip commas for calculation later
@@ -389,7 +390,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                             }
                                                         }}
                                                     />
-                                                    <button type="button" className="icon-btn" onClick={() => {
+                                                    <button type="button" className="icon-btn" aria-label={`Delete sub-goal ${sg.name}`} onClick={() => {
                                                         const newSubGoals = [...editData.subGoals];
                                                         newSubGoals.splice(idx, 1);
 
@@ -422,7 +423,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                     }
                                                 }}
                                             />
-                                            <input type="text" className="form-input" placeholder="Amount"
+                                            <input type="text" inputMode="decimal" className="form-input" placeholder="Amount"
                                                 id={`new-sg-amt-${editingPotId}`}
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter') {
@@ -448,7 +449,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                     }
                                                 }}
                                             />
-                                            <button type="button" className="btn btn-secondary" style={{ minHeight: '38px' }} onClick={() => {
+                                            <button type="button" className="btn btn-secondary" style={{ minHeight: '38px' }} aria-label="Add sub-goal" onClick={() => {
                                                 const nameInput = document.getElementById(`new-sg-name-${editingPotId}`) as HTMLInputElement;
                                                 const amtInput = document.getElementById(`new-sg-amt-${editingPotId}`) as HTMLInputElement;
                                                 if (nameInput.value && amtInput.value) {
