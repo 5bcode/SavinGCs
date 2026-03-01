@@ -1,7 +1,7 @@
 'use client';
 
 import { useSavingsData } from '@/hooks/useSavingsData';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import AllocateFunds from './AllocateFunds';
 import NetWorthHero from './NetWorthHero';
 import ProgressRing from './ProgressRing';
@@ -21,29 +21,54 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
         fetch('/api/recurring/process', { method: 'POST' }).catch(err => console.error('Recurring process failed', err));
     }, []);
 
-    // Sort pots by time left (goal date) for consistent ordering everywhere
-    const sortedPots = [...pots].sort((a: any, b: any) => {
-        if (a.goal_date && b.goal_date) {
-            return new Date(a.goal_date).getTime() - new Date(b.goal_date).getTime();
+    // ⚡ Bolt Optimization: Memoize all derived data calculations to prevent recalculation on every render
+    const { sortedPots, visiblePots, totalSavings, savingsForProgress, totalGoal, overallProgress } = useMemo(() => {
+        // Sort pots by time left (goal date) for consistent ordering everywhere
+        // ⚡ Bolt Optimization: Use fast string comparison (localeCompare) for ISO dates instead of new Date().getTime()
+        const sorted = [...pots].sort((a: any, b: any) => {
+            if (a.goal_date && b.goal_date) {
+                return a.goal_date.localeCompare(b.goal_date);
+            }
+            if (a.goal_date) return -1;
+            if (b.goal_date) return 1;
+            return 0;
+        });
+
+        // Calculate totals directly from data
+        const total = pots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
+
+        // For progress, exclude 'Unallocated' pot
+        const progressPotsList = pots.filter((p: any) => p.name !== 'Unallocated');
+        const progressSavings = progressPotsList.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
+        const goal = progressPotsList.reduce((sum: number, pot: any) => sum + (pot.goal_amount || 0), 0);
+
+        // Net worth uses totalSavings. Progress uses filtered values.
+        const progress = goal > 0 ? (progressSavings / goal) * 100 : 0;
+
+        // Filter out Unallocated pot if balance is 0, using the sorted list
+        const visible = sorted.filter((p: any) => p.name !== 'Unallocated' || p.total_balance !== 0);
+
+        return {
+            sortedPots: sorted,
+            visiblePots: visible,
+            totalSavings: total,
+            savingsForProgress: progressSavings,
+            totalGoal: goal,
+            overallProgress: progress
+        };
+    }, [pots]);
+
+    // ⚡ Bolt Optimization: Group accounts by pot_id once (O(N)) instead of calling filter() for every pot in render (O(N*M))
+    const accountsByPotId = useMemo(() => {
+        const grouped: Record<number, any[]> = {};
+        for (const account of accounts) {
+            if (!grouped[account.pot_id]) {
+                grouped[account.pot_id] = [];
+            }
+            grouped[account.pot_id].push(account);
         }
-        if (a.goal_date) return -1;
-        if (b.goal_date) return 1;
-        return 0;
-    });
-
-    // Calculate totals directly from data
-    const totalSavings = pots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
-
-    // For progress, exclude 'Unallocated' pot
-    const progressPots = pots.filter((p: any) => p.name !== 'Unallocated');
-    const savingsForProgress = progressPots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
-    const totalGoal = progressPots.reduce((sum: number, pot: any) => sum + (pot.goal_amount || 0), 0);
-
-    // Net worth uses totalSavings. Progress uses filtered values.
-    const overallProgress = totalGoal > 0 ? (savingsForProgress / totalGoal) * 100 : 0;
-
-    // Filter out Unallocated pot if balance is 0, using the sorted list
-    const visiblePots = sortedPots.filter((p: any) => p.name !== 'Unallocated' || p.total_balance !== 0);
+        return grouped;
+    }, [accounts]);
 
     if (isLoading) {
         return (
@@ -133,8 +158,8 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
                 </div>
             ) : (
                 <div className="stack mb-xl">
-                    {visiblePots.map((pot) => {
-                        const potAccounts = accounts.filter((a) => a.pot_id === pot.id);
+                    {visiblePots.map((pot: any) => {
+                        const potAccounts = accountsByPotId[pot.id] || [];
                         return <PotCard key={pot.id} pot={pot} accounts={potAccounts} onAccountClick={onAccountClick} />;
                     })}
                 </div>

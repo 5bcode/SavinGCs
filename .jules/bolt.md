@@ -1,0 +1,3 @@
+## 2024-05-19 - Fast Date Sorting in JS
+**Learning:** `new Date(dateString).getTime()` inside a sort function is a significant performance bottleneck in JavaScript, performing ~3-5x slower than direct string comparison using `localeCompare()` for ISO 8601 formatted date strings. This app uses ISO date strings heavily for `goal_date` and `transaction_date`.
+**Action:** When sorting objects by an ISO 8601 date string property, use `a.dateString.localeCompare(b.dateString)` instead of instantiating `Date` objects, unless parsing non-ISO formats or dealing with timezones where string comparison is invalid.
