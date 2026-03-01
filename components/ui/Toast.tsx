@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     <div key={toast.id} className={`toast toast-${toast.type} animate-slide-in`}>
                         <span>{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
                         <span>{toast.message}</span>
-                        <button onClick={() => removeToast(toast.id)} className="toast-close">×</button>
+                        <button aria-label="Close notification" onClick={() => removeToast(toast.id)} className="toast-close">×</button>
                         <ToastTimer id={toast.id} onFinished={() => removeToast(toast.id)} />
                     </div>
                 ))}
