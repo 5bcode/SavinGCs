@@ -73,7 +73,7 @@ export default function RecurringTransactionsList() {
                             }}>
                                 {rt.amount >= 0 ? '+' : ''}£{Math.abs(rt.amount).toLocaleString('en-GB')}
                             </div>
-                            <button onClick={() => handleDelete(rt.id)} className="btn-ghost" style={{ padding: '8px', color: 'var(--error)' }}>
+                            <button aria-label={`Delete recurring rule ${rt.description || 'Recurring Transaction'}`} onClick={() => handleDelete(rt.id)} className="btn-ghost" style={{ padding: '8px', color: 'var(--error)' }}>
                                 🗑️
                             </button>
                         </div>

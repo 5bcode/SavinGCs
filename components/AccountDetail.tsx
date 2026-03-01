@@ -410,6 +410,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                                         onClick={() => handleUnallocate(tx)}
                                         className="icon-btn"
                                         title="Unallocate / Reverse"
+                                        aria-label={`Unallocate transaction ${tx.description}`}
                                         style={{ color: 'var(--error)', padding: '4px' }}
                                     >
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -427,6 +428,7 @@ export default function AccountDetail({ accountId, currentUser, onClose, onUpdat
                                     onClick={() => handleDeleteTx(tx)}
                                     className="icon-btn"
                                     title="Delete Record Only"
+                                    aria-label={`Delete transaction ${tx.description}`}
                                     style={{ color: 'var(--text-tertiary)', opacity: 0.5 }}
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
