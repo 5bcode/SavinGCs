@@ -1,0 +1,36 @@
+
+> savingstracker@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.3
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 2s
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 7.7s (458 modules)
+ GET /login 404 in 7993ms
+ ○ Compiling / ...
+ ✓ Compiled / in 2.5s (539 modules)
+ GET / 200 in 2685ms
+ ✓ Compiled /api/auth/session in 260ms (313 modules)
+ GET /api/auth/session 401 in 350ms
+ GET /api/auth/session 401 in 13ms
+ ✓ Compiled /api/auth/login in 312ms (320 modules)
+Migration: added provider column
+Database initialized successfully
+ POST /api/auth/login 401 in 654ms
+ GET / 200 in 159ms
+ GET /api/auth/session 401 in 24ms
+ GET /api/auth/session 401 in 11ms
+ POST /api/auth/login 200 in 158ms
+ ○ Compiling /api/recurring/process ...
+ ✓ Compiled /api/recurring/process in 908ms (382 modules)
+ ✓ Compiled (389 modules)
+Database initialized successfully
+ GET /api/accounts 200 in 1157ms
+ GET /api/pots 200 in 1165ms
+ GET /api/notifications?unread=true 200 in 1194ms
+ GET /api/notifications 200 in 1199ms
+ POST /api/recurring/process 200 in 1191ms
+ POST /api/recurring/process 200 in 1189ms
