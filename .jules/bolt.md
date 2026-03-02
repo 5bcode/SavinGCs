@@ -1,0 +1,3 @@
+## 2024-05-24 - Unnecessary Re-renders and Expensive Array Operations in Dashbaord
+**Learning:** In React functional components, expensive derived operations like sorting (especially with `Date` conversions), filtering, and mapping on arrays (like `pots` and `accounts`) are recalculated on every single render if not memoized. Combined with string-to-Date conversions in the sort function, this causes significant performance bottlenecks.
+**Action:** Always wrap heavy derived state computations, such as `sortedPots`, `visiblePots`, and accumulation reductions (`reduce`), in a `useMemo` hook with the raw data array as the dependency. Additionally, use `localeCompare` instead of instantiating new `Date` objects when sorting ISO 8601 formatted date strings.
