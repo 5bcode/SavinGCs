@@ -1,3 +1,3 @@
-## 2024-05-22 - Mobile Number Inputs
-**Learning:** Using `inputMode="decimal"` on text inputs for currency is a massive UX win for mobile users compared to `type="text"`.
-**Action:** Always check number inputs on mobile view and apply `inputMode="decimal"` if not using `type="number"`.
+## 2024-05-24 - Dynamic ARIA labels for icon-only list buttons
+**Learning:** Icon-only buttons rendered in lists (e.g., Delete Pot, Edit Pot, Delete Account) can cause confusion for screen reader users if they all have identical labels like "Delete" or "Edit".
+**Action:** Always append dynamic contextual information (e.g., `aria-label={\`Delete \${item.name}\`}`) to icon-only action buttons within lists to ensure precise intent communication to assistive technologies.
