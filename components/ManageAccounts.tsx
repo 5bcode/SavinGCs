@@ -297,7 +297,7 @@ export default function ManageAccounts({ onUpdate, onAccountClick, currentUser }
                     </div>
                     <div className="form-group">
                         <label className="form-label">Starting Balance (£)</label>
-                        <input type="text" className="form-input" value={formData.currentBalance}
+                        <input type="text" inputMode="decimal" className="form-input" value={formData.currentBalance}
                             onChange={(e) => setFormData({ ...formData, currentBalance: e.target.value })}
                             onFocus={(e) => {
                                 const val = e.target.value.replace(/,/g, '');
