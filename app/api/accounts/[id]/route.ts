@@ -27,6 +27,11 @@ export async function GET(
             return NextResponse.json({ error: 'Account not found' }, { status: 404 });
         }
 
+        // Check ownership (IDOR protection)
+        if (account.owner !== 'Joint' && account.owner !== user.displayName) {
+            return NextResponse.json({ error: 'Unauthorized account access' }, { status: 403 });
+        }
+
         const historyRes = await dbClient.execute({
             sql: `SELECT balance, recorded_date, created_at
                   FROM balance_history
@@ -72,6 +77,11 @@ export async function PATCH(
             return NextResponse.json({ error: 'Account not found' }, { status: 404 });
         }
 
+        // Check ownership (IDOR protection)
+        if (existing.owner !== 'Joint' && existing.owner !== user.displayName) {
+            return NextResponse.json({ error: 'Unauthorized account access' }, { status: 403 });
+        }
+
         const newName = accountName ?? existing.account_name;
         const newType = accountType ?? existing.account_type;
         const newOwner = owner ?? existing.owner;
@@ -106,6 +116,22 @@ export async function DELETE(
     await ensureInitialized();
 
     try {
+        // Fetch existing to check ownership
+        const existingRes = await dbClient.execute({
+            sql: 'SELECT owner FROM accounts WHERE id = ?',
+            args: [id]
+        });
+        const existing = existingRes.rows[0];
+
+        if (!existing) {
+            return NextResponse.json({ error: 'Account not found' }, { status: 404 });
+        }
+
+        // Check ownership (IDOR protection)
+        if (existing.owner !== 'Joint' && existing.owner !== user.displayName) {
+            return NextResponse.json({ error: 'Unauthorized account access' }, { status: 403 });
+        }
+
         await dbClient.execute({
             sql: 'DELETE FROM accounts WHERE id = ?',
             args: [id]
