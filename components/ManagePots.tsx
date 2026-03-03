@@ -217,7 +217,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                     </div>
                     <div className="form-group">
                         <label className="form-label">Goal Amount (£)</label>
-                        <input type="text" className="form-input" value={formData.goalAmount}
+                        <input type="text" inputMode="decimal" className="form-input" value={formData.goalAmount}
                             onChange={(e) => setFormData({ ...formData, goalAmount: e.target.value })}
                             onFocus={() => stripCommasOnFocus(formData.goalAmount, (v) => setFormData({ ...formData, goalAmount: v }))}
                             onBlur={() => formatAmountOnBlur(formData.goalAmount, (v) => setFormData({ ...formData, goalAmount: v }))}
@@ -330,7 +330,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-md)' }}>
                                         <div className="form-group">
                                             <label className="form-label">Goal Amount (£)</label>
-                                            <input type="text" className="form-input" value={editData.goalAmount}
+                                            <input type="text" inputMode="decimal" className="form-input" value={editData.goalAmount}
                                                 onChange={(e) => setEditData({ ...editData, goalAmount: e.target.value })}
                                                 onFocus={() => stripCommasOnFocus(editData.goalAmount, (v) => setEditData({ ...editData, goalAmount: v }))}
                                                 onBlur={() => formatAmountOnBlur(editData.goalAmount, (v) => setEditData({ ...editData, goalAmount: v }))}
@@ -360,7 +360,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                             setEditData({ ...editData, subGoals: newSubGoals });
                                                         }}
                                                     />
-                                                    <input type="text" className="form-input" value={sg.targetAmount} // stored as formatted string
+                                                    <input type="text" inputMode="decimal" className="form-input" value={sg.targetAmount} // stored as formatted string
                                                         style={{ flex: 1, fontSize: '0.85rem' }}
                                                         onChange={(e) => {
                                                             // Allow typing, strip commas for calculation later
@@ -422,7 +422,7 @@ export default function ManagePots({ onUpdate }: ManagePotsProps) {
                                                     }
                                                 }}
                                             />
-                                            <input type="text" className="form-input" placeholder="Amount"
+                                            <input type="text" inputMode="decimal" className="form-input" placeholder="Amount"
                                                 id={`new-sg-amt-${editingPotId}`}
                                                 onKeyDown={(e) => {
                                                     if (e.key === 'Enter') {
