@@ -1,7 +1,7 @@
 'use client';
 
 import { useSavingsData } from '@/hooks/useSavingsData';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import AllocateFunds from './AllocateFunds';
 import NetWorthHero from './NetWorthHero';
 import ProgressRing from './ProgressRing';
@@ -22,14 +22,18 @@ export default function Dashboard({ onUpdateBalance, onAccountClick }: Dashboard
     }, []);
 
     // Sort pots by time left (goal date) for consistent ordering everywhere
-    const sortedPots = [...pots].sort((a: any, b: any) => {
-        if (a.goal_date && b.goal_date) {
-            return new Date(a.goal_date).getTime() - new Date(b.goal_date).getTime();
-        }
-        if (a.goal_date) return -1;
-        if (b.goal_date) return 1;
-        return 0;
-    });
+    // ⚡ Bolt Optimization: Memoized sorting to prevent recalculation on every render
+    // and used localeCompare for faster ISO date sorting without Date object instantiation.
+    const sortedPots = useMemo(() => {
+        return [...pots].sort((a: any, b: any) => {
+            if (a.goal_date && b.goal_date) {
+                return a.goal_date.localeCompare(b.goal_date);
+            }
+            if (a.goal_date) return -1;
+            if (b.goal_date) return 1;
+            return 0;
+        });
+    }, [pots]);
 
     // Calculate totals directly from data
     const totalSavings = pots.reduce((sum: number, pot: any) => sum + (pot.total_balance || 0), 0);
