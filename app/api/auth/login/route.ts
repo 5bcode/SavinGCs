@@ -3,6 +3,11 @@ import bcrypt from 'bcryptjs';
 import { dbClient, ensureInitialized } from '@/lib/db_turso';
 import { signSession } from '@/lib/session';
 
+// Pre-calculate a dummy hash at module load to prevent timing attacks
+// on user enumeration. bcrypt.compareSync takes 130-240ms, so we must
+// do the same amount of work even if the user doesn't exist.
+const DUMMY_HASH = bcrypt.hashSync('dummy_password', 10);
+
 export async function POST(request: NextRequest) {
     await ensureInitialized();
 
@@ -23,17 +28,14 @@ export async function POST(request: NextRequest) {
 
         const user = result.rows[0];
 
-        if (!user) {
-            return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
-            );
-        }
+        // To prevent timing attacks (username enumeration), we MUST always perform
+        // the expensive bcrypt compare operation regardless of whether the user exists.
+        const hashToCompare = user ? (user.password_hash as string) : DUMMY_HASH;
+        const isValid = bcrypt.compareSync(password, hashToCompare);
 
-        const passwordHash = user.password_hash as string;
-        const isValid = bcrypt.compareSync(password, passwordHash);
-
-        if (!isValid) {
+        // If the user didn't exist, we still return invalid credentials,
+        // but now it took the same amount of time.
+        if (!user || !isValid) {
             return NextResponse.json(
                 { error: 'Invalid credentials' },
                 { status: 401 }
