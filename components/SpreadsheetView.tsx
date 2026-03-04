@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useTransactions } from '@/hooks/useSavingsData';
+import { formatDateLong } from '@/lib/utils';
 
 import NetWorthChart from './NetWorthChart';
 
@@ -22,7 +23,8 @@ export default function SpreadsheetView() {
     const grouped = useMemo(() => {
         const g: Record<string, Transaction[]> = {};
         transactions.forEach((tx) => {
-            const dateKey = new Date(tx.transaction_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            // Optimization: Use string parsing instead of expensive Date formatting
+            const dateKey = formatDateLong(tx.transaction_date);
             if (!g[dateKey]) g[dateKey] = [];
             g[dateKey].push(tx);
         });
