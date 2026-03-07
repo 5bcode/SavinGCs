@@ -126,7 +126,7 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                     <div className="modal card">
                         <div className="modal-header flex justify-between items-center mb-md">
                             <h3 className="text-xl font-bold">Allocate Funds</h3>
-                            <button onClick={() => setShowModal(false)} className="icon-btn">
+                            <button onClick={() => setShowModal(false)} className="icon-btn" aria-label="Close modal">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </div>
@@ -233,6 +233,7 @@ export default function AllocateFunds({ pots, accounts, onUpdate }: AllocateFund
                                 <div className="relative" style={{ position: 'relative' }}>
                                     <input
                                         type="text"
+                                        inputMode="decimal"
                                         className="form-input"
                                         value={amount}
                                         onChange={e => setAmount(e.target.value)}

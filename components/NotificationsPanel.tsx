@@ -33,6 +33,7 @@ export default function NotificationsPanel({ onNavigate }: NotificationsPanelPro
                 className="icon-btn"
                 onClick={() => setIsOpen(!isOpen)}
                 title="Notifications"
+                aria-label="Toggle notifications"
                 style={{ position: 'relative' }}
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
