@@ -23,17 +23,14 @@ export async function POST(request: NextRequest) {
 
         const user = result.rows[0];
 
-        if (!user) {
-            return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
-            );
-        }
+        // Dummy hash to prevent timing attacks if the user is not found.
+        // This hash is for 'dummy' with a cost factor of 10.
+        const dummyHash = '$2b$10$ZAT1B5zVdWWXnGm3wpO3GuFF0jSY0GdCd/TJhsAh0eXDs6cRQjsGu';
 
-        const passwordHash = user.password_hash as string;
+        const passwordHash = user ? (user.password_hash as string) : dummyHash;
         const isValid = bcrypt.compareSync(password, passwordHash);
 
-        if (!isValid) {
+        if (!user || !isValid) {
             return NextResponse.json(
                 { error: 'Invalid credentials' },
                 { status: 401 }
